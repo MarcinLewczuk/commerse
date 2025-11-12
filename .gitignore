@@ -1,4 +1,8 @@
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# Backend
+/backend/private/.env
+/backend/private/bizsuite_ssh_priv.key
+/backend/private/bizsuite_ssh.pub
 
 # Compiled output
 /dist
