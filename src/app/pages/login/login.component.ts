@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { FormControl, ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -9,6 +9,15 @@ import { Router, RouterLink } from '@angular/router';
 })
 
 export class LoginComponent {
-  emailControl = new FormControl('');
-  passwordControl = new FormControl('');
+  emailControl = new FormControl('', { updateOn: 'submit'});
+  passwordControl = new FormControl('', { updateOn: 'submit'});
+
+  loginForm = new FormGroup({
+    email: this.emailControl,
+    password: this.passwordControl
+  });
+
+  onSubmit() {
+
+  }
 }

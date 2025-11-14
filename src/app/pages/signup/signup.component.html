@@ -2,15 +2,40 @@
 	<main class="auth-card bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
 		<h1 class="text-2xl font-semibold text-gray-900 mb-4">Create account</h1>
 
-		<form class="space-y-4">
+		<form class="space-y-4" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
 			<label for="email" class="block">
 				<span class="label-text block text-sm text-gray-500 mb-2">Email</span>
-				<input type="email" name="email" required placeholder="you@example.com" [formControl]="emailControl" class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+				<input 
+                type="email" 
+                name="email" 
+                required 
+                placeholder="you@example.com" 
+                formControlName="email"
+                class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
 			</label>
 
 			<label for="password" class="block">
 				<span class="label-text block text-sm text-gray-500 mb-2">Password</span>
-				<input type="password" name="password" required placeholder="Choose a password" [formControl]="passwordControl" class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+				<input 
+                type="password" 
+                name="password" 
+                required 
+                placeholder="Choose a password" 
+                formControlName="password"
+                required minlength="8"
+                class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+			</label>
+
+            <label for="confirmPassword" class="block">
+				<span class="label-text block text-sm text-gray-500 mb-2">Confirm password</span>
+				<input 
+                type="confirmPassword" 
+                name="confirmPassword" 
+                required 
+                placeholder="Confirm password" 
+                formControlName="confirmPassword"
+                required minlength="8"
+                class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
 			</label>
 
 			<button type="submit" class="btn-primary w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-md cursor-pointer">Create account</button>
@@ -18,6 +43,38 @@
 
 		<p class="text-sm text-gray-600 mt-3">Submitted: <span class="font-mono text-sm text-gray-700">{{ emailControl.value }}</span></p>
 		<p class="text-sm text-gray-600">Submitted: <span class="font-mono text-sm text-gray-700">{{ passwordControl.value }}</span></p>
+        
+        @if (signupForm.get('email')?.invalid &&
+        signupForm.get('email')?.touched) {
+            <div class="mt-1"><small class="text-red-600 text-sm">* Email required</small></div>
+        }
+
+        @if (
+        signupForm.get('password')?.invalid && 
+        signupForm.get('password')?.touched) {
+            @if (signupForm.get('password')?.errors?.['required']) {
+            <div class="mt-1"><small class="text-red-600 text-sm">* Password is required</small></div>
+            } @if (signupForm.get('password')?.errors?.['minLength']) {
+            <div class="mt-1"><small class="text-red-600 text-sm">* Minimum 8 characters required</small></div>
+            } @if (signupForm.get('password')?.errors?.['hasUpperCase']) {
+            <div class="mt-1"><small class="text-red-600 text-sm">* Password needs at least 1 uppercase letter</small></div>
+            } @if (signupForm.get('password')?.errors?.['hasLowerCase']) {
+            <div class="mt-1"><small class="text-red-600 text-sm">* Password cannot be all uppercase</small></div>
+            } @if (signupForm.get('password')?.errors?.['hasSpecialChar']) {
+            <div class="mt-1"><small class="text-red-600 text-sm">* Password needs at least 1 special character</small></div>
+            } @if (signupForm.get('password')?.errors?.['hasUpperCase']) {
+            <div class="mt-1"><small class="text-red-600 text-sm">* Password needs at least 1 number</small></div>
+            } @if (signupForm.get('password')?.errors?.['minlength']) {
+            <div class="mt-1"><small class="text-red-600 text-sm">* Minimum length 8 characters</small></div>
+            }
+        }
+
+        @if (signupForm.get('confirmPassword')?.invalid &&
+        signupForm.get('confirmPassword')?.touched) {
+            @if (signupForm.get('confirmPassword')?.errors?.['isMatching']) {
+            <div class="mt-1"><small class="text-red-600 text-sm">* Passwords do not match</small></div>
+            }
+        }
 
 		<p class="muted text-center text-sm text-gray-600 mt-4">Already have an account? <a routerLink="/login" class="text-indigo-600 font-medium cursor-pointer">Sign in</a></p>
 	</main>
