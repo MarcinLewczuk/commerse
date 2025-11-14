@@ -41,9 +41,13 @@
 			<button type="submit" class="btn-primary w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-md cursor-pointer">Create account</button>
 		</form>
 
+        <!-- For development - delete after functionality added -->
 		<p class="text-sm text-gray-600 mt-3">Submitted: <span class="font-mono text-sm text-gray-700">{{ emailControl.value }}</span></p>
 		<p class="text-sm text-gray-600">Submitted: <span class="font-mono text-sm text-gray-700">{{ passwordControl.value }}</span></p>
-        
+        <!-- -- END -- -->
+
+        <!-- Validation -->
+
         @if (signupForm.get('email')?.invalid &&
         signupForm.get('email')?.touched) {
             <div class="mt-1"><small class="text-red-600 text-sm">* Email required</small></div>

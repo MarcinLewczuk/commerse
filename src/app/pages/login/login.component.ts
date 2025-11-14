@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormControl, ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -9,15 +9,27 @@ import { RouterLink } from '@angular/router';
 })
 
 export class LoginComponent {
-  emailControl = new FormControl('', { updateOn: 'submit'});
-  passwordControl = new FormControl('', { updateOn: 'submit'});
+  emailControl = new FormControl('');
+  passwordControl = new FormControl('');
 
   loginForm = new FormGroup({
     email: this.emailControl,
-    password: this.passwordControl
+    password: this.passwordControl,
   });
 
-  onSubmit() {
+  constructor(private fb: FormBuilder) {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required]],
+    })
+  }
 
+  ngOnInit() {
+    this.emailControl = this.loginForm.get('email') as FormControl;
+    this.passwordControl = this.loginForm.get('password') as FormControl;
+  }
+
+  onSubmit() {
+    
   }
 }
