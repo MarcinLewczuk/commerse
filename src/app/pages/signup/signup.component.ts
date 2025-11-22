@@ -1,9 +1,11 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, FormGroup, Validators, FormBuilder } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import PasswordValidator from "../../validators/password-validator.validator"
+import { Router, RouterLink } from '@angular/router';
+import PasswordValidator from "../../validators/password.validator"
 import { HttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
+import { EmailTakenValidator } from '../../validators/email-taken.validator';
+import { MatSnackBar } from '@angular/material/snack-bar'
 
 @Component({
   selector: 'app-signup',
@@ -16,6 +18,8 @@ export class SignupComponent {
   passwordControl = new FormControl('');
   confirmPasswordControl = new FormControl('');
   http = inject(HttpClient);
+  sb = inject(MatSnackBar)
+  r = inject(Router)
 
   existingEmails: any[] =[]
   existingEmails$ = of(this.existingEmails);
@@ -29,8 +33,7 @@ export class SignupComponent {
   constructor(private fb: FormBuilder) {
     this.http = inject(HttpClient)
     this.signupForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      // EmailValidator.emailTaken()
+      email: ['', [Validators.required, Validators.email], EmailTakenValidator(this.http)],
       password: ['', [Validators.required, PasswordValidator.passwordStrength]],
       confirmPassword: ['', [Validators.required, PasswordValidator.matchPassword]]
     })
@@ -42,26 +45,36 @@ export class SignupComponent {
     this.confirmPasswordControl = this.signupForm.get('confirmPassword') as FormControl;
   }
 
-  onSubmit() {
-  const email = this.emailControl.value;
-  const password = this.passwordControl.value;
+onSubmit() {
+  // Fail
+  if (this.signupForm.invalid) {
+    console.log("Form invalid.");
+    
+    this.sb.open('Invalid.', '', {
+      duration: 2000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom',
+    })
 
-  this.http.get<any[]>('http://localhost:3000/users/email')
-    .subscribe(existingEmails => {
+    return;
+  }
 
-      const isTaken = existingEmails.some(e => e.email === email);
+  const { email, password } = this.signupForm.value;
 
-      if (isTaken) {
-        console.log("Email is taken");
-        return;
-      }
+  const user = { email, password };
 
-      const user = { email, password };
-
-      this.http.post('http://localhost:3000/users', user)
-        .subscribe(() => {
-          console.log("Account created");
-        });
+  this.http.post('http://localhost:3000/users', user)
+  // Success
+  .subscribe(() => {
+    console.log("Account created.");
+    
+    this.r.navigate(['/login']);
+    
+    this.sb.open('Account Created Successfully!', '', {
+      duration: 2000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom',
+    })
     });
-}
+  }
 }
