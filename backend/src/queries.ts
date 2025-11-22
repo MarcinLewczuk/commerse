@@ -20,7 +20,7 @@ export function selectColumn(tableName: string, columnName: string) {
     return (req: Request, res: Response) => {
         const value = req.params[columnName];
         db.query(
-            `SELECT * FROM ${tableName} WHERE ${columnName} = ?`,
+            `SELECT ${columnName} FROM ${tableName}`,
             [value],
             (error: QueryError | null, results: any[]) => {
                 if (error) {
@@ -37,21 +37,7 @@ export function selectColumn(tableName: string, columnName: string) {
 }
 
 // Insert queries
-export function insert(tableName: string) {
-    return (req: Request, res: Response) => {
-        const data = req.body;
-        db.query(`INSERT INTO ${tableName} SET ?`, data, (error: QueryError | null, results: any) => {
-            if (error) {
-                console.error(`POST to "${tableName}" failed:`, error);
-                res.status(500).json({ error: 'Internal server error' });
-            } else {
-                res.status(201).json({ id: results.insertId, ...data });
-            }
-        });
-    }
-}
-
-export function insertInto(tableName: string, columns: string[]) {
+export function insert(tableName: string, columns: string[]) {
     return (req: Request, res: Response) => {
         const data = req.body;
         const placeholders = columns.map(() => '?').join(', ');

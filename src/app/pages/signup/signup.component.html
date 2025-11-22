@@ -50,34 +50,37 @@
 
         @if (signupForm.get('email')?.invalid &&
         signupForm.get('email')?.touched) {
-            <div class="mt-1"><small class="text-red-600 text-sm">* Email required</small></div>
+            @if (signupForm.get('email')?.errors?.['required']) {
+                <div class="mt-1 pb-3"><small class="text-red-600 text-sm">• Email required</small></div>
+            }
         }
+        @if (signupForm.get('email')?.touched && signupForm.get('email')?.errors?.['emailTaken']) {
+                <h1>TESTTEST</h1>
+            }
 
         @if (
         signupForm.get('password')?.invalid && 
         signupForm.get('password')?.touched) {
             @if (signupForm.get('password')?.errors?.['required']) {
-            <div class="mt-1"><small class="text-red-600 text-sm">* Password is required</small></div>
+            <div class="mt-1"><small class="text-red-600 text-sm">• Password is required</small></div>
             } @if (signupForm.get('password')?.errors?.['minLength']) {
-            <div class="mt-1"><small class="text-red-600 text-sm">* Minimum 8 characters required</small></div>
+            <div class="mt-1"><small class="text-red-600 text-sm">• Minimum 8 characters required</small></div>
             } @if (signupForm.get('password')?.errors?.['hasUpperCase']) {
-            <div class="mt-1"><small class="text-red-600 text-sm">* Password needs at least 1 uppercase letter</small></div>
+            <div class="mt-1"><small class="text-red-600 text-sm">• Password needs at least 1 uppercase letter</small></div>
             } @if (signupForm.get('password')?.errors?.['hasLowerCase']) {
-            <div class="mt-1"><small class="text-red-600 text-sm">* Password cannot be all uppercase</small></div>
+            <div class="mt-1"><small class="text-red-600 text-sm">• Password cannot be all uppercase</small></div>
             } @if (signupForm.get('password')?.errors?.['hasSpecialChar']) {
-            <div class="mt-1"><small class="text-red-600 text-sm">* Password needs at least 1 special character</small></div>
+            <div class="mt-1"><small class="text-red-600 text-sm">• Password needs at least 1 special character</small></div>
             } @if (signupForm.get('password')?.errors?.['hasUpperCase']) {
-            <div class="mt-1"><small class="text-red-600 text-sm">* Password needs at least 1 number</small></div>
+            <div class="mt-1"><small class="text-red-600 text-sm">• Password needs at least 1 number</small></div>
             } @if (signupForm.get('password')?.errors?.['minlength']) {
-            <div class="mt-1"><small class="text-red-600 text-sm">* Minimum length 8 characters</small></div>
+            <div class="mt-1"><small class="text-red-600 text-sm">• Minimum length 8 characters</small></div>
             }
         }
 
-        @if (signupForm.get('confirmPassword')?.invalid &&
-        signupForm.get('confirmPassword')?.touched) {
-            @if (signupForm.get('confirmPassword')?.errors?.['isMatching']) {
-            <div class="mt-1"><small class="text-red-600 text-sm">* Passwords do not match</small></div>
-            }
+        @if (signupForm.get('password')?.touched && 
+        signupForm.get('confirmPassword')?.errors?.['mismatch']) {
+            <div class="mt-1"><small class="text-red-600 text-sm">• Passwords do not match</small></div>
         }
 
 		<p class="muted text-center text-sm text-gray-600 mt-4">Already have an account? <a routerLink="/login" class="text-indigo-600 font-medium cursor-pointer">Sign in</a></p>

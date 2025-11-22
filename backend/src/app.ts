@@ -6,7 +6,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import mysql from 'mysql2';
 import bodyParser from 'body-parser';
-import { selectAll } from './queries'; // Adjust path if needed
+import { insert, selectAll, selectColumn } from './queries'; // Adjust path if needed
 
 const server = express();
 server.use(bodyParser.json());
@@ -48,7 +48,27 @@ server.get('/users', (req: Request, res: Response) => {
   selectAll('users')(req, res);
 });
 
+server.get('/users/email', (req: Request, res: Response) => {
+  selectColumn('users', 'email')(req, res);
+});
+
+server.post('/users', (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  // Create username from email
+  const username = email.split('@')[0];
+
+  req.body = {
+    email,
+    password,
+    username
+  };
+
+  insert('users', ['email', 'password', 'username'])(req, res);
+});
+
 // Products
 server.get('/products', (req: Request, res: Response) => {
   selectAll('products')(req, res);
 });
+
