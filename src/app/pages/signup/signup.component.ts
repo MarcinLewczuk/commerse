@@ -4,8 +4,10 @@ import { Router, RouterLink } from '@angular/router';
 import PasswordValidator from "../../validators/password.validator"
 import { HttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
-import { EmailTakenValidator } from '../../validators/email-taken.validator';
+import EmailValidation from '../../validators/email.validator';
 import { MatSnackBar } from '@angular/material/snack-bar'
+import { AuthService } from '../../services/AuthService';
+import PasswordValidation from '../../validators/password.validator';
 
 @Component({
   selector: 'app-signup',
@@ -17,7 +19,6 @@ export class SignupComponent {
   emailControl = new FormControl('');
   passwordControl = new FormControl('');
   confirmPasswordControl = new FormControl('');
-  http = inject(HttpClient);
   sb = inject(MatSnackBar)
   r = inject(Router)
 
@@ -30,12 +31,11 @@ export class SignupComponent {
     confirmPassword: this.confirmPasswordControl
   });
 
-  constructor(private fb: FormBuilder) {
-    this.http = inject(HttpClient)
+  constructor(private fb: FormBuilder, private auth: AuthService, private http: HttpClient) {
     this.signupForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email], EmailTakenValidator(this.http)],
-      password: ['', [Validators.required, PasswordValidator.passwordStrength]],
-      confirmPassword: ['', [Validators.required, PasswordValidator.matchPassword]]
+      email: ['', [Validators.required, EmailValidation.emailFormat], EmailValidation.emailTaken(this.http)],
+      password: ['', [Validators.required, PasswordValidation.passwordStrength]],
+      confirmPassword: ['', [Validators.required, PasswordValidation.matchPassword]]
     })
   }
 
@@ -60,21 +60,24 @@ onSubmit() {
   }
 
   const { email, password } = this.signupForm.value;
+  this.auth.signup(email!, password!).subscribe({
+    next: () => {
+      this.auth.login(email!, password!)
+      this.r.navigate(['/']);
+      this.sb.open('Account Created Successfully!', '', {
+        duration: 2000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+      });
 
-  const user = { email, password };
-
-  this.http.post('http://localhost:3000/users', user)
-  // Success
-  .subscribe(() => {
-    console.log("Account created.");
-    
-    this.r.navigate(['/login']);
-    
-    this.sb.open('Account Created Successfully!', '', {
-      duration: 2000,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom',
-    })
-    });
+    },
+    error: () => {
+      this.sb.open('Signup failed.', '', {
+        duration: 2000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+      });
+    }
+  });
   }
 }

@@ -1,150 +1,135 @@
 <div class="page-wrapper min-h-screen flex items-center justify-center bg-gray-50 p-6">
-	<main class="auth-card bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-		<h1 class="text-2xl font-semibold text-gray-900 mb-4">Create account</h1>
+  <main class="auth-card bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+    <h1 class="text-2xl font-semibold text-gray-900 mb-4">Create account</h1>
 
-		<form class="space-y-4" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
-			<label for="email" class="block">
-				<span class="label-text block text-sm text-gray-500 mb-2">Email</span>
-				<input 
-                type="email" 
-                name="email" 
-                required 
-                placeholder="you@example.com" 
-                formControlName="email"
-                class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-			</label>
+    <form class="space-y-4" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+      <label for="email" class="block">
+        <span class="label-text block text-sm text-gray-500 mb-2">Email</span>
+        <input type="email" name="email" required placeholder="you@example.com" formControlName="email"
+          class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </label>
 
-			<label for="password" class="block">
-				<span class="label-text block text-sm text-gray-500 mb-2">Password</span>
-				<input 
-                type="password" 
-                name="password" 
-                required 
-                placeholder="Choose a password" 
-                formControlName="password"
-                required minlength="8"
-                class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-			</label>
+      <label for="password" class="block">
+        <span class="label-text block text-sm text-gray-500 mb-2">Password</span>
+        <input type="password" name="password" required placeholder="Choose a password" formControlName="password"
+          required minlength="8"
+          class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </label>
 
-            <label for="confirmPassword" class="block">
-				<span class="label-text block text-sm text-gray-500 mb-2">Confirm password</span>
-				<input 
-                type="confirmPassword" 
-                name="confirmPassword" 
-                required 
-                placeholder="Confirm password" 
-                formControlName="confirmPassword"
-                required minlength="8"
-                class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-			</label>
+      <label for="confirmPassword" class="block">
+        <span class="label-text block text-sm text-gray-500 mb-2">Confirm password</span>
+        <input type="confirmPassword" name="confirmPassword" required placeholder="Confirm password"
+          formControlName="confirmPassword" required minlength="8"
+          class="w-full px-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </label>
 
-			<button type="submit" class="btn-primary w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-md cursor-pointer">Create account</button>
-		</form>
+      <button type="submit"
+        class="btn-primary w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-md cursor-pointer">Create
+        account</button>
+    </form>
 
-        <!-- For development - delete after functionality added -->
-		<p class="text-sm text-gray-600 mt-3">Submitted: <span class="font-mono text-sm text-gray-700">{{ emailControl.value }}</span></p>
-		<p class="text-sm text-gray-600">Submitted: <span class="font-mono text-sm text-gray-700">{{ passwordControl.value }}</span></p>
-        <!-- -- END -- -->
+    <!-- For development - delete after functionality added -->
+    <p class="text-sm text-gray-600 mt-3">Submitted: <span class="font-mono text-sm text-gray-700">{{ emailControl.value
+        }}</span></p>
+    <p class="text-sm text-gray-600">Submitted: <span class="font-mono text-sm text-gray-700">{{ passwordControl.value
+        }}</span></p>
+    <!-- -- END -- -->
 
-        <!-- Validation -->
+    <!-- Validation -->
 
-        @if (signupForm.get('email')?.touched &&
-     signupForm.get('email')?.invalid) {
 
-  @if (signupForm.get('email')?.errors?.['required']) {
+    @if (signupForm.get('email')?.errors?.['required']) {
     <div class="mt-1 pb-3">
-      <small class="text-red-600 text-sm">• Email required</small>
+      <small class="text-red-600 text-sm">✗ Email required</small>
     </div>
-  }
+    }
 
-  @if (signupForm.get('email')?.errors?.['emailTaken']) {
+    @if (signupForm.get('email')?.errors?.['emailTaken']) {
     <div class="mt-1 pb-3">
-      <small class="text-red-600 text-sm">• Email is already taken</small>
+      <small class="text-red-600 text-sm">✗ Email already taken</small>
     </div>
-  }
-}
+    }
+
+    @if (signupForm.get('email')?.errors?.['emailFormat']) {
+    <div class="mt-1 pb-3">
+      <small class="text-red-600 text-sm">✗ Invalid email format</small>
+    </div>
+    }
 
 
-        @if (signupForm.get('password')?.touched) {
+    <!-- Required -->
+    <div class="mt-1 flex items-center" [class.text-green-600]="!passwordControl.errors?.['required']"
+      [class.text-red-600]="passwordControl.errors?.['required']">
 
-  <!-- Required -->
-  <div class="mt-1 flex items-center"
-       [class.text-green-600]="!passwordControl.errors?.['required']"
-       [class.text-red-600]="passwordControl.errors?.['required']">
+      <span class="w-4 inline-block">
+        @if (passwordControl.errors?.['required']) { ✗ } @else { ✓ }
+      </span>
+      <small>Password is required</small>
+    </div>
 
-    <span class="w-4 inline-block">
-      @if (passwordControl.errors?.['required']) { • } @else { ✓ }
-    </span>
-    <small>Password is required</small>
-  </div>
+    <!-- Minimum 8 characters -->
+    <div class="mt-1 flex items-center" [class.text-green-600]="!passwordControl.errors?.['isValidLength']"
+      [class.text-red-600]="passwordControl.errors?.['isValidLength']">
 
-  <!-- Minimum 8 characters -->
-  <div class="mt-1 flex items-center"
-       [class.text-green-600]="!passwordControl.errors?.['minLength']"
-       [class.text-red-600]="passwordControl.errors?.['minLength']">
+      <span class="w-4 inline-block">
+        @if (passwordControl.errors?.['isValidLength']) { ✗ } @else { ✓ }
+      </span>
+      <small>Minimum length 8 characters</small>
+    </div>
 
-    <span class="w-4 inline-block">
-      @if (passwordControl.errors?.['minLength']) { • } @else { ✓ }
-    </span>
-    <small>Minimum length 8 characters</small>
-  </div>
+    <!-- Uppercase -->
+    <div class="mt-1 flex items-center" [class.text-green-600]="!passwordControl.errors?.['hasUpperCase']"
+      [class.text-red-600]="passwordControl.errors?.['hasUpperCase']">
 
-  <!-- Uppercase -->
-  <div class="mt-1 flex items-center"
-       [class.text-green-600]="!passwordControl.errors?.['hasUpperCase']"
-       [class.text-red-600]="passwordControl.errors?.['hasUpperCase']">
+      <span class="w-4 inline-block">
+        @if (passwordControl.errors?.['hasUpperCase']) { ✗ } @else { ✓ }
+      </span>
+      <small>At least 1 uppercase letter</small>
+    </div>
 
-    <span class="w-4 inline-block">
-      @if (passwordControl.errors?.['hasUpperCase']) { • } @else { ✓ }
-    </span>
-    <small>At least 1 uppercase letter</small>
-  </div>
+    <!-- Lowercase -->
+    <div class="mt-1 flex items-center" [class.text-green-600]="!passwordControl.errors?.['hasLowerCase']"
+      [class.text-red-600]="passwordControl.errors?.['hasLowerCase']">
 
-  <!-- Lowercase -->
-  <div class="mt-1 flex items-center"
-       [class.text-green-600]="!passwordControl.errors?.['hasLowerCase']"
-       [class.text-red-600]="passwordControl.errors?.['hasLowerCase']">
+      <span class="w-4 inline-block">
+        @if (passwordControl.errors?.['hasLowerCase']) { ✗ } @else { ✓ }
+      </span>
+      <small>At least 1 lowercase letter</small>
+    </div>
 
-    <span class="w-4 inline-block">
-      @if (passwordControl.errors?.['hasLowerCase']) { • } @else { ✓ }
-    </span>
-    <small>At least 1 lowercase letter</small>
-  </div>
+    <!-- Special character -->
+    <div class="mt-1 flex items-center" [class.text-green-600]="!passwordControl.errors?.['hasSpecialChar']"
+      [class.text-red-600]="passwordControl.errors?.['hasSpecialChar']">
 
-  <!-- Special character -->
-  <div class="mt-1 flex items-center"
-       [class.text-green-600]="!passwordControl.errors?.['hasSpecialChar']"
-       [class.text-red-600]="passwordControl.errors?.['hasSpecialChar']">
+      <span class="w-4 inline-block">
+        @if (passwordControl.errors?.['hasSpecialChar']) { ✗ } @else { ✓ }
+      </span>
+      <small>At least 1 special character</small>
+    </div>
 
-    <span class="w-4 inline-block">
-      @if (passwordControl.errors?.['hasSpecialChar']) { • } @else { ✓ }
-    </span>
-    <small>At least 1 special character</small>
-  </div>
+    <!-- Number -->
+    <div class="mt-1 flex items-center" [class.text-green-600]="!passwordControl.errors?.['hasNumeric']"
+      [class.text-red-600]="passwordControl.errors?.['hasNumeric']">
 
-  <!-- Number -->
-  <div class="mt-1 flex items-center"
-       [class.text-green-600]="!passwordControl.errors?.['hasNumber']"
-       [class.text-red-600]="passwordControl.errors?.['hasNumber']">
+      <span class="w-4 inline-block">
+        @if (passwordControl.errors?.['hasNumeric']) { ✗ } @else { ✓ }
+      </span>
+      <small>At least 1 number</small>
+    </div>
 
-    <span class="w-4 inline-block">
-      @if (passwordControl.errors?.['hasNumber']) { • } @else { ✓ }
-    </span>
-    <small>At least 1 number</small>
-  </div>
-
-}
+    
 
 
-        @if (signupForm.get('confirmPassword')?.touched &&
-     signupForm.get('confirmPassword')?.errors?.['mismatch']) {
+    @if (signupForm.get('confirmPassword')?.touched &&
+    signupForm.get('confirmPassword')?.errors?.['mismatch']) {
 
-  <div class="mt-1">
-    <small class="text-red-600 text-sm">• Passwords do not match</small>
-  </div>
-}
+    <div class="mt-1">
+      <small class="text-red-600 text-sm">✗ Passwords do not match</small>
+    </div>
+    }
 
 
-		<p class="muted text-center text-sm text-gray-600 mt-4">Already have an account? <a routerLink="/login" class="text-indigo-600 font-medium cursor-pointer">Sign in</a></p>
-	</main>
+    <p class="muted text-center text-sm text-gray-600 mt-4">Already have an account? <a routerLink="/login"
+        class="text-indigo-600 font-medium cursor-pointer">Sign in</a></p>
+  </main>
 </div>

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { QueryError } from 'mysql2';
-import { db } from './app'; 
+import { db } from './app';
+import { verifyPassword, sanitizeUser } from './security/password';
 
 // Select queries
 export function selectAll(tableName: string) {
@@ -103,5 +104,42 @@ export function dropTable(tableName: string) {
                 res.status(200).json({ message: `Table ${tableName} dropped successfully` });
             }
         });
+    };
+}
+
+// Auth (login) queries
+// Plain-text password comparison; replace with hashing for production.
+export function loginUser(tableName: string) {
+    return (req: Request, res: Response) => {
+        const { email, password } = req.body || {};
+        if (!email || !password) {
+            return res.status(400).json({ error: 'email and password required' });
+        }
+
+        // Fetch user record by email only; verify bcrypt hash separately.
+        db.query(
+            `SELECT id, email, username, password FROM ${tableName} WHERE email = ? LIMIT 1`,
+            [email],
+            async (error: QueryError | null, results: any[]) => {
+                if (error) {
+                    console.error(`LOGIN query on "${tableName}" failed:`, error);
+                    return res.status(500).json({ error: 'internal error' });
+                }
+                if (!results || results.length === 0) {
+                    return res.status(401).json({ error: 'invalid credentials' });
+                }
+                const user = results[0];
+                try {
+                    const ok = await verifyPassword(password, user.password);
+                    if (!ok) {
+                        return res.status(401).json({ error: 'invalid credentials' });
+                    }
+                    return res.status(200).json(sanitizeUser(user));
+                } catch (e) {
+                    console.error('Password verification failed:', e);
+                    return res.status(500).json({ error: 'internal error' });
+                }
+            }
+        );
     };
 }

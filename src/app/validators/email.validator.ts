@@ -2,7 +2,7 @@ import { AbstractControl, AsyncValidatorFn, ValidationErrors } from '@angular/fo
 import { HttpClient } from '@angular/common/http';
 import { map, catchError, of } from 'rxjs';
 
-export function EmailTakenValidator(http: HttpClient): AsyncValidatorFn {
+export function emailTaken(http: HttpClient): AsyncValidatorFn {
   return (control: AbstractControl) => {
     const email = control.value;
 
@@ -17,3 +17,18 @@ export function EmailTakenValidator(http: HttpClient): AsyncValidatorFn {
     );
   };
 }
+
+export function emailFormat(control: AbstractControl): ValidationErrors | null {
+  const value = control.value;
+  if (!value) return null; // leave required to other validators
+  // Basic pattern: no spaces, one '@', domain with a dot and TLD >=2 chars
+  const basicRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  return basicRegex.test(value) ? null : { emailFormat: true };
+}
+
+const EmailValidation = {
+  emailTaken,
+  emailFormat,
+}
+
+export default EmailValidation;
