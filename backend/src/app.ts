@@ -81,7 +81,6 @@ server.get('/products', (req: Request, res: Response) => {
 });
 
 // Login route (credential check via email + password). Returns 200 with user info or 401 invalid credentials.
-// NOTE: Plain-text password comparison is insecure; hash & salt in production.
 server.post('/users/login', loginUser('users'));
 
 
