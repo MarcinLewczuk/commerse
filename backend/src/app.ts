@@ -6,7 +6,8 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import mysql from 'mysql2';
 import bodyParser from 'body-parser';
-import { selectAll } from './queries'; // Adjust path if needed
+import { insert, selectAll, selectColumn, loginUser } from './queries'; // Adjust path if needed
+import { hashPassword, sanitizeUser } from './security/password';
 
 const server = express();
 server.use(bodyParser.json());
@@ -48,7 +49,38 @@ server.get('/users', (req: Request, res: Response) => {
   selectAll('users')(req, res);
 });
 
+server.get('/users/email', (req: Request, res: Response) => {
+  selectColumn('users', 'email')(req, res);
+});
+
+server.post('/users', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ error: 'email and password required' });
+    }
+    const username = email.split('@')[0];
+    const hashed = await hashPassword(password);
+
+    // Rebuild request body with hashed password
+    req.body = { email, password: hashed, username };
+    insert('users', ['email', 'password', 'username'])(req, {
+      status: (code: number) => ({
+        json: (payload: any) => res.status(code).json(sanitizeUser(payload))
+      })
+    } as Response); // Wrap to intercept response and sanitize
+  } catch (e) {
+    console.error('User creation failed:', e);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
 // Products
 server.get('/products', (req: Request, res: Response) => {
   selectAll('products')(req, res);
 });
+
+// Login route (credential check via email + password). Returns 200 with user info or 401 invalid credentials.
+server.post('/users/login', loginUser('users'));
+
+
