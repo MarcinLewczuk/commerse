@@ -17,6 +17,30 @@ export function selectAll(tableName: string) {
     };
 }
 
+// Select single row by id
+export function selectById(tableName: string) {
+    return (req: Request, res: Response) => {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ error: 'id required' });
+        }
+        db.query(
+            `SELECT * FROM ${tableName} WHERE id = ? LIMIT 1`,
+            [id],
+            (error: QueryError | null, results: any[]) => {
+                if (error) {
+                    console.error(`GET by id from "${tableName}" failed:`, error);
+                    return res.status(500).json({ error: 'Internal server error' });
+                }
+                if (!results || results.length === 0) {
+                    return res.status(404).json({ error: `${tableName.slice(0, -1)} not found` });
+                }
+                return res.json(results[0]);
+            }
+        );
+    };
+}
+
 export function selectColumn(tableName: string, columnName: string) {
     return (req: Request, res: Response) => {
         const value = req.params[columnName];

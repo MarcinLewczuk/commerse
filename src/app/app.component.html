@@ -1,16 +1,19 @@
 <header class="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16">
-      <a routerLink="/" class="flex items-center gap-3 cursor-pointer">
-        <!-- <img src="../../public/favicon-32x32.png" alt="Commerse logo" class="h-8 w-8 object-contain" /> -->
-        <span class="text-xl font-semibold text-gray-900">Commerse</span>
-      </a>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-6">
+        <a routerLink="/" class="flex items-center gap-3 cursor-pointer">
+          <!-- <img src="../../public/favicon-32x32.png" alt="Commerse logo" class="h-8 w-8 object-contain" /> -->
+          <span class="text-xl font-semibold text-gray-900">Commerse</span>
+        </a>
+        <a routerLink="/products" class="text-sm font-medium text-gray-600 hover:text-gray-900">Products</a>
+      </div>
+      <nav class="flex items-center gap-4">
         <a routerLink="login" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Log in</a>
         <a routerLink="signup"
-          class="ml-2 font-semibold inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md">Sign
+          class="font-semibold inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md">Sign
           up</a>
-      </div>
+      </nav>
     </div>
   </div>
 </header>
