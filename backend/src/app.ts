@@ -21,6 +21,8 @@ import { hashPassword, sanitizeUser } from './security/password';
 const server = express();
 server.use(bodyParser.json());
 server.use(cors());
+// Serve static product images from root public/images folder
+server.use('/images', express.static(path.resolve(__dirname, '../../public/images')));
 
 // Database connection
 const db = mysql.createConnection({
@@ -112,5 +114,3 @@ server.get('/products/slug/:slug', (req: Request, res: Response) => {
 
 // Login route (credential check via email + password). Returns 200 with user info or 401 invalid credentials.
 server.post('/users/login', loginUser('users'));
-
-

@@ -6,7 +6,6 @@ import { Title } from '@angular/platform-browser';
 })
 
 export class TitleService {
-
   title = inject(Title)
 
   setTitle(title: string) {
