@@ -1,20 +1,8 @@
 import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { Routes } from '@angular/router';
-import { ProductInfoComponent } from './product-info/product-info.component';
-
-interface Product {
-  id: number;
-  name: string;
-  short_description: string;
-  long_description: string;
-  price: number;
-  image_url: string;
-  date_added: string; // ISO date string from API
-  last_updated: string; // ISO date string from API
-}
+import { Product } from '../../models/product';
+import { ProductsService } from '../../services/products.service';
 
 @Component({
   selector: 'app-products',
@@ -23,7 +11,7 @@ interface Product {
   templateUrl: './products.component.html'
 })
 export class ProductsComponent implements OnInit {
-  private http = inject(HttpClient);
+  private productsService = inject(ProductsService);
 
   // Signals for state management
   products = signal<Product[]>([]);
@@ -37,7 +25,7 @@ export class ProductsComponent implements OnInit {
   fetchProducts() {
     this.loading.set(true);
     this.error.set(null);
-    this.http.get<Product[]>('http://localhost:3000/products').subscribe({
+    this.productsService.getAll().subscribe({
       next: (data) => {
         this.products.set(Array.isArray(data) ? data : []);
         this.loading.set(false);
@@ -65,10 +53,6 @@ export class ProductsComponent implements OnInit {
   }
 
   slug(p: Product): string {
-    return p.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .trim();
+    return this.productsService.slugify(p.name);
   }
 }

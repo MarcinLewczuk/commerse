@@ -1,1 +1,96 @@
-<p>home works!</p>
+<section class="py-8">
+		<div class="mb-4 px-7 flex items-center justify-between">
+			<h2 class="text-2xl font-semibold">Featured products</h2>
+			<a [routerLink]="['/products']" class="text-sm px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">View all</a>
+		</div>
+
+	@if (error()) {
+		<div class="text-red-600">{{ error() }}</div>
+	} @else if (loading()) {
+		<div>Loading…</div>
+	} @else {
+		<div class="relative scale-75 origin-top mx-auto">
+			<!-- Left arrow -->
+			@if (canPrev()) {
+				<button
+					type="button"
+					(click)="prevPage()"
+					class="absolute left-0 top-0 h-full w-10 bg-white/90 hover:bg-white text-black shadow border border-gray-300 z-10 cursor-pointer"
+					[attr.aria-label]="'Previous'"
+				>
+					‹
+				</button>
+			}
+
+			<!-- Right arrow -->
+			@if (canNext()) {
+				<button
+					type="button"
+					(click)="nextPage()"
+					class="absolute right-0 top-0 h-full w-10 bg-white/90 hover:bg-white text-black shadow border border-gray-300 z-10 cursor-pointer"
+					[attr.aria-label]="'Next'"
+				>
+					›
+				</button>
+			}
+
+			<!-- Carousel scroller -->
+					<div
+				#carousel
+						class="overflow-x-auto no-scrollbar scroll-smooth"
+				(scroll)="onScroll()"
+			>
+						<div class="grid grid-flow-col auto-cols-[75%] sm:auto-cols-[50%] md:auto-cols-[33%] lg:auto-cols-[25%] gap-4 px-12">
+								@for (p of featured(); track p.id) {
+															<a
+																class="block bg-white border border-gray-200 shadow-sm transition rounded-md overflow-hidden focus:outline-none"
+																[routerLink]="['/products', slugify(p.name)]"
+									>
+										<div class="aspect-4/3 bg-gray-100">
+											<img
+												[src]="p.image_url"
+												[alt]="p.name"
+												class="w-full h-full object-cover"
+											/>
+										</div>
+										<div class="p-3">
+											<div class="text-sm text-gray-500">Product</div>
+											<div class="font-medium truncate">{{ p.name }}</div>
+											<div class="text-gray-700">{{ displayPrice(p) }}</div>
+										</div>
+									</a>
+								}
+				</div>
+			</div>
+		</div>
+	}
+</section>
+
+<!-- AI Assistant promo -->
+<section class="py-8">
+	<div class="px-7">
+		<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+			<div class="grid grid-cols-1 md:grid-cols-4">
+				<!-- Card / visual -->
+			<div class="p-8 bg-linear-to-br from-indigo-50 to-purple-50 flex items-center justify-center md:col-span-1 cursor-default">
+					<div class="text-center">
+						<div class="mx-auto mb-3 h-14 w-14 rounded-md bg-indigo-600 text-white grid place-items-center text-2xl">🤖</div>
+						<h3 class="text-xl font-semibold">AI Assistant</h3>
+					</div>
+				</div>
+				<!-- Info + CTA -->
+				<div class="p-8 flex flex-col justify-center md:col-span-3">
+							<p class="text-gray-600 mb-4 text-center max-w-[75ch] mx-auto">Check out the AI Assistant to create products for your business from a single prompt. Provide a title, description, and price — and we’ll generate the product for you!</p>
+					<div class="mt-2 w-full">
+						<div class="max-w-[100ch] mx-auto flex justify-end">
+							<a [routerLink]="['/ai-assistant']" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">
+								See more
+								<span aria-hidden="true" class="text-base">→</span>
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</section>

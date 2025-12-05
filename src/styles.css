@@ -1,4 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 @import 'tailwindcss';
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Utility: hide scrollbars while preserving scrollability */
+.no-scrollbar {
+	/* Firefox */
+	scrollbar-width: none;
+	/* IE 10+ */
+	-ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+	/* Chrome, Safari, Edge (Blink/WebKit) */
+	display: none;
+}
