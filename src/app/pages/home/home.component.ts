@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Product } from '../../models/product';
 import { ProductsService } from '../../services/products.service';
-import { slugify } from '../../models/product';
 
 @Component({
   selector: 'app-home',
