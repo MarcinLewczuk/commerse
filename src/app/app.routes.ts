@@ -4,6 +4,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { SignupComponent } from './pages/signup/signup.component';
 import { ProductsComponent } from './pages/products/products.component';
 import { ProductInfoComponent } from './pages/products/product-info/product-info.component';
+import { AiAssistantComponent } from './pages/ai-assistant/ai-assistant.component';
 
 export const routes: Routes = [
     {
@@ -30,5 +31,10 @@ export const routes: Routes = [
         path: 'signup',
         component: SignupComponent,
         title: 'Signup'
+    },
+    {
+        path: 'ai-assistant',
+        component: AiAssistantComponent,
+        title: 'AI Assistant'
     }
 ];
