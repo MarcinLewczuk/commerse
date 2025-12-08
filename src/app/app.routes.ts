@@ -1,10 +1,9 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
-import { LoginComponent } from './pages/login/login.component';
-import { SignupComponent } from './pages/signup/signup.component';
 import { ProductsComponent } from './pages/products/products.component';
 import { ProductInfoComponent } from './pages/products/product-info/product-info.component';
 import { AiAssistantComponent } from './pages/ai-assistant/ai-assistant.component';
+import { DashboardComponent } from './pages/dashboard/dashboard.component';
 
 export const routes: Routes = [
     {
@@ -23,18 +22,18 @@ export const routes: Routes = [
         title: 'Product'
     },
     {
-        path: 'login',
-        component: LoginComponent,
-        title: 'Login'
-    },
-    {
-        path: 'signup',
-        component: SignupComponent,
-        title: 'Signup'
-    },
-    {
         path: 'ai-assistant',
         component: AiAssistantComponent,
         title: 'AI Assistant'
+    },
+    {
+        path: 'dashboard',
+        component: DashboardComponent,
+        title: 'Dashboard'
+    },
+    {
+        path: 'callback',
+        loadComponent: () =>
+            import('../app/components/callback.component').then(m => m.CallbackComponent)
     }
 ];
