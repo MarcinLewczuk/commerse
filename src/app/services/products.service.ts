@@ -16,6 +16,10 @@ export class ProductsService {
     return this.http.get<Product>(`${this.base}/products/slug/${slug}`);
   }
 
+  getByShopId(shopId: number): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.base}/shops/${shopId}/products`);
+  }
+
   slugify(name: string) {
     return slugify(name);
   }

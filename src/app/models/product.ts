@@ -1,12 +1,14 @@
 export interface Product {
   id: number;
+  shop_id?: number;
   name: string;
-  short_description: string;
-  long_description: string;
+  description?: string;
   price: number;
-  image_url: string;
-  date_added?: string;
-  last_updated?: string;
+  image_url?: string;
+  stock_quantity?: number;
+  sku?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export function slugify(name: string): string {

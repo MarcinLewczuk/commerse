@@ -4,17 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
-
-interface Product {
-  id: number;
-  name: string;
-  short_description: string;
-  long_description: string;
-  price: number;
-  image_url: string;
-  date_added: string;
-  last_updated: string;
-}
+import { Product } from '../../../models/product';
 
 @Component({
   selector: 'app-product-info',

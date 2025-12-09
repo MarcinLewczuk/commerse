@@ -6,7 +6,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import mysql from 'mysql2';
 import bodyParser from 'body-parser';
-import { insert, selectAll, selectColumn, loginUser, selectById } from './queries'; // Adjust path if needed
+import { insert, selectAll, selectColumn, loginUser, selectById, getShopByAuth0UserId, getUserByAuth0Id, upsertUserByAuth0Id, createShop } from './queries'; // Adjust path if needed
 
 // Simple in-memory slug formatter (duplicate logic kept server-side for single fetch by slug)
 function slugify(name: string): string {
@@ -60,30 +60,18 @@ server.get('/users', (req: Request, res: Response) => {
   selectAll('users')(req, res);
 });
 
-server.get('/users/email', (req: Request, res: Response) => {
-  selectColumn('users', 'email')(req, res);
+// Get shop by Auth0 user ID
+server.get('/shops/by-user/:auth0Id', (req: Request, res: Response) => {
+  getShopByAuth0UserId('users')(req, res);
 });
 
-server.post('/users', async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ error: 'email and password required' });
-    }
-    const username = email.split('@')[0];
-    const hashed = await hashPassword(password);
+// Get user info by Auth0 ID
+server.get('/users/by-auth0/:auth0Id', (req: Request, res: Response) => {
+  getUserByAuth0Id('users')(req, res);
+});
 
-    // Rebuild request body with hashed password
-    req.body = { email, password: hashed, username };
-    insert('users', ['email', 'password', 'username'])(req, {
-      status: (code: number) => ({
-        json: (payload: any) => res.status(code).json(sanitizeUser(payload))
-      })
-    } as Response); // Wrap to intercept response and sanitize
-  } catch (e) {
-    console.error('User creation failed:', e);
-    res.status(500).json({ error: 'internal error' });
-  }
+server.get('/users/email', (req: Request, res: Response) => {
+  selectColumn('users', 'email')(req, res);
 });
 
 // Products
@@ -112,5 +100,27 @@ server.get('/products/slug/:slug', (req: Request, res: Response) => {
   });
 });
 
-// Login route (credential check via email + password). Returns 200 with user info or 401 invalid credentials.
-server.post('/users/login', loginUser('users'));
+// Get products by shop ID
+server.get('/shops/:shopId/products', (req: Request, res: Response) => {
+  const { shopId } = req.params;
+  if (!shopId) {
+    return res.status(400).json({ error: 'shopId required' });
+  }
+  db.query(
+    'SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku FROM products WHERE shop_id = ? ORDER BY created_at DESC',
+    [shopId],
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error('Products fetch by shop failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      return res.json(results);
+    }
+  );
+});
+
+// Upsert user by Auth0 ID (auto-insert on login)
+server.post('/users/upsert', upsertUserByAuth0Id());
+
+// Create a new shop
+server.post('/shops', createShop());

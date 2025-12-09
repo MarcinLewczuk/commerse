@@ -22,19 +22,14 @@
 				</div>
 				<div class="flex-1">
 					<h1 class="text-2xl font-semibold text-gray-900">{{ product()!.name }}</h1>
-					  <p class="mt-2 text-sm text-gray-500">Added {{ product()!.date_added | date:'medium' }}</p>
+					  <p class="mt-2 text-sm text-gray-500">Added {{ product()!.created_at | date:'medium' }}</p>
 					<div class="mt-3 text-indigo-600 font-semibold">{{ product()!.price | currency:'USD' }}</div>
 				</div>
 			</header>
 
 			<section class="mt-6">
-				<h2 class="text-sm font-semibold text-gray-700">Overview</h2>
-				<p class="mt-2 text-gray-700">{{ product()!.short_description }}</p>
-			</section>
-
-			<section class="mt-6">
-				<h2 class="text-sm font-semibold text-gray-700">Details</h2>
-				<p class="mt-2 text-gray-700 whitespace-pre-line">{{ product()!.long_description }}</p>
+				<h2 class="text-sm font-semibold text-gray-700">Description</h2>
+				<p class="mt-2 text-gray-700">{{ product()!.description || 'No description provided.' }}</p>
 			</section>
 
 			<footer class="mt-8 flex items-center gap-3">

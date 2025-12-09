@@ -131,39 +131,184 @@ export function dropTable(tableName: string) {
     };
 }
 
-// Auth (login) queries
+// Fetch shop by Auth0 user ID
+export function getShopByAuth0UserId(tableName: string) {
+    return (req: Request, res: Response) => {
+        const { auth0Id } = req.params;
+        if (!auth0Id) {
+            return res.status(400).json({ error: 'auth0Id required' });
+        }
+
+        db.query(
+            `SELECT u.role, s.id, s.name, s.created_at FROM shops s
+             JOIN ${tableName} u ON s.id = u.shop_id
+             WHERE u.auth0_id = ? AND u.role IN ('seller', 'customer_seller') LIMIT 1`,
+            [auth0Id],
+            (error: QueryError | null, results: any[]) => {
+                if (error) {
+                    console.error(`GET shop by Auth0 user ID failed:`, error);
+                    return res.status(500).json({ error: 'Internal server error' });
+                }
+                if (!results || results.length === 0) {
+                    return res.status(404).json({ error: 'Shop not found or user is not a seller' });
+                }
+                return res.json(results[0]);
+            }
+        );
+    };
+}
+
+// Fetch user info by Auth0 ID
+export function getUserByAuth0Id(tableName: string) {
+    return (req: Request, res: Response) => {
+        const { auth0Id } = req.params;
+        if (!auth0Id) {
+            return res.status(400).json({ error: 'auth0Id required' });
+        }
+
+        db.query(
+            `SELECT id, auth0_id, role, shop_id FROM ${tableName} WHERE auth0_id = ? LIMIT 1`,
+            [auth0Id],
+            (error: QueryError | null, results: any[]) => {
+                if (error) {
+                    console.error(`GET user by Auth0 ID from "${tableName}" failed:`, error);
+                    return res.status(500).json({ error: 'Internal server error' });
+                }
+                if (!results || results.length === 0) {
+                    return res.status(404).json({ error: 'User not found' });
+                }
+                return res.json(results[0]);
+            }
+        );
+    };
+}
+
+// Upsert user by Auth0 ID (insert if not exists, return existing if exists)
+export function upsertUserByAuth0Id() {
+    return (req: Request, res: Response) => {
+        const { auth0_id, role = 'customer' } = req.body;
+        
+        if (!auth0_id) {
+            return res.status(400).json({ error: 'auth0_id is required' });
+        }
+
+        // First check if user exists
+        db.query(
+            'SELECT id, auth0_id, role, shop_id FROM users WHERE auth0_id = ? LIMIT 1',
+            [auth0_id],
+            (error: QueryError | null, results: any[]) => {
+                if (error) {
+                    console.error('Check user existence failed:', error);
+                    return res.status(500).json({ error: 'Internal server error' });
+                }
+
+                // If user exists, return them
+                if (results && results.length > 0) {
+                    return res.status(200).json(results[0]);
+                }
+
+                // If user doesn't exist, insert them
+                db.query(
+                    'INSERT INTO users (auth0_id, role, shop_id) VALUES (?, ?, NULL)',
+                    [auth0_id, role],
+                    (insertError: QueryError | null, insertResults: any) => {
+                        if (insertError) {
+                            console.error('Insert user failed:', insertError);
+                            return res.status(500).json({ error: 'Internal server error' });
+                        }
+                        return res.status(201).json({
+                            id: insertResults.insertId,
+                            auth0_id,
+                            role,
+                            shop_id: null
+                        });
+                    }
+                );
+            }
+        );
+    };
+}
+
+// Create a new shop and update user role
+export function createShop() {
+    return (req: Request, res: Response) => {
+        const { auth0_id, shop_name } = req.body;
+
+        if (!auth0_id || !shop_name) {
+            return res.status(400).json({ error: 'auth0_id and shop_name are required' });
+        }
+
+        // First, get the user to check they exist
+        db.query(
+            'SELECT id, role, shop_id FROM users WHERE auth0_id = ? LIMIT 1',
+            [auth0_id],
+            (error: QueryError | null, userResults: any[]) => {
+                if (error) {
+                    console.error('Get user failed:', error);
+                    return res.status(500).json({ error: 'Internal server error' });
+                }
+
+                if (!userResults || userResults.length === 0) {
+                    return res.status(404).json({ error: 'User not found' });
+                }
+
+                const user = userResults[0];
+
+                // Check if user already has a shop
+                if (user.shop_id) {
+                    return res.status(400).json({ error: 'User already has a shop' });
+                }
+
+                // Create the shop
+                db.query(
+                    'INSERT INTO shops (name) VALUES (?)',
+                    [shop_name],
+                    (shopError: QueryError | null, shopResults: any) => {
+                        if (shopError) {
+                            console.error('Create shop failed:', shopError);
+                            return res.status(500).json({ error: 'Internal server error' });
+                        }
+
+                        const shopId = shopResults.insertId;
+
+                        // Update user: set shop_id and update role to seller or customer_seller
+                        const newRole = user.role === 'customer' ? 'seller' : 'customer_seller';
+                        db.query(
+                            'UPDATE users SET shop_id = ?, role = ? WHERE id = ?',
+                            [shopId, newRole, user.id],
+                            (updateError: QueryError | null) => {
+                                if (updateError) {
+                                    console.error('Update user failed:', updateError);
+                                    return res.status(500).json({ error: 'Internal server error' });
+                                }
+
+                                return res.status(201).json({
+                                    message: 'Shop created successfully',
+                                    shop: {
+                                        id: shopId,
+                                        name: shop_name
+                                    },
+                                    user: {
+                                        id: user.id,
+                                        auth0_id,
+                                        role: newRole,
+                                        shop_id: shopId
+                                    }
+                                });
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    };
+}
+
+// Auth (login) queries - DEPRECATED (use Auth0 instead)
+// Kept for reference only
 // Plain-text password comparison; replace with hashing for production.
 export function loginUser(tableName: string) {
     return (req: Request, res: Response) => {
-        const { email, password } = req.body || {};
-        if (!email || !password) {
-            return res.status(400).json({ error: 'email and password required' });
-        }
-
-        // Fetch user record by email only; verify bcrypt hash separately.
-        db.query(
-            `SELECT id, email, username, password FROM ${tableName} WHERE email = ? LIMIT 1`,
-            [email],
-            async (error: QueryError | null, results: any[]) => {
-                if (error) {
-                    console.error(`LOGIN query on "${tableName}" failed:`, error);
-                    return res.status(500).json({ error: 'internal error' });
-                }
-                if (!results || results.length === 0) {
-                    return res.status(401).json({ error: 'invalid credentials' });
-                }
-                const user = results[0];
-                try {
-                    const ok = await verifyPassword(password, user.password);
-                    if (!ok) {
-                        return res.status(401).json({ error: 'invalid credentials' });
-                    }
-                    return res.status(200).json(sanitizeUser(user));
-                } catch (e) {
-                    console.error('Password verification failed:', e);
-                    return res.status(500).json({ error: 'internal error' });
-                }
-            }
-        );
+        return res.status(501).json({ error: 'Use Auth0 authentication instead. This endpoint is deprecated.' });
     };
 }
