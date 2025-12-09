@@ -9,8 +9,12 @@
         <a routerLink="/products" class="text-sm font-medium text-gray-600 hover:text-gray-900">Products</a>
       </div>
       <nav class="flex items-center gap-4">
-        <a routerLink="/login" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Log in</a>
-        <a routerLink="/signup" class="font-semibold inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md">Sign up</a>
+        @if (auth.isAuthenticated$ | async) {
+          <a routerLink="/dashboard" class="font-semibold inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md">Dashboard</a>
+          <button (click)="logout()" class="text-sm font-semibold text-gray-700 hover:text-gray-900 cursor-pointer">Log out</button>
+        } @else {
+          <button (click)="login()" class="font-semibold inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md cursor-pointer">Log in</button>
+        }
       </nav>
     </div>
   </div>
