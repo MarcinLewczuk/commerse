@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
-import { ProductsComponent } from './pages/products/products.component';
+import { ShopsComponent } from './pages/shops/shops.component';
+import { ShopDetailComponent } from './pages/shop-detail/shop-detail.component';
 import { ProductInfoComponent } from './pages/products/product-info/product-info.component';
 import { AiAssistantComponent } from './pages/ai-assistant/ai-assistant.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
@@ -13,9 +14,14 @@ export const routes: Routes = [
         title: 'Home - Commerse'
     },
     {
-        path: 'products',
-        component: ProductsComponent,
-        title: 'Products'
+        path: 'shops',
+        component: ShopsComponent,
+        title: 'Shops'
+    },
+    {
+        path: 'shop/:id',
+        component: ShopDetailComponent,
+        title: 'Shop'
     },
     {
         path: 'products/:slug',
