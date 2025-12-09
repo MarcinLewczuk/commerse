@@ -8,12 +8,19 @@
         </a>
         <a routerLink="/products" class="text-sm font-medium text-gray-600 hover:text-gray-900">Products</a>
       </div>
-      <nav class="flex items-center gap-4">
+      <nav class="flex items-center gap-3">
         @if (auth.isAuthenticated$ | async) {
-          <a routerLink="/dashboard" class="font-semibold inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md">Dashboard</a>
-          <button (click)="logout()" class="text-sm font-semibold text-gray-700 hover:text-gray-900 cursor-pointer">Log out</button>
+          @if (isSeller$ | async) {
+            <a routerLink="/seller/dashboard" class="font-semibold inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-md transition-colors">
+              My Shop
+            </a>
+          }
+          <a routerLink="/dashboard" class="font-semibold inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md transition-colors">
+            Profile
+          </a>
+          <button (click)="logout()" class="text-sm font-semibold text-gray-700 hover:text-gray-900 cursor-pointer transition-colors">Log out</button>
         } @else {
-          <button (click)="login()" class="font-semibold inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md cursor-pointer">Log in</button>
+          <button (click)="login()" class="font-semibold inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md cursor-pointer transition-colors">Log in</button>
         }
       </nav>
     </div>
