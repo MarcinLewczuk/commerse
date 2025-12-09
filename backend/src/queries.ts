@@ -312,3 +312,93 @@ export function loginUser(tableName: string) {
         return res.status(501).json({ error: 'Use Auth0 authentication instead. This endpoint is deprecated.' });
     };
 }
+
+// Get all shops with their products (for shops listing page)
+export function getAllShopsWithProducts() {
+    return (req: Request, res: Response) => {
+        db.query(
+            `SELECT s.id, s.name, s.created_at FROM shops s ORDER BY s.created_at DESC`,
+            (error: QueryError | null, shops: any[]) => {
+                if (error) {
+                    console.error('Get shops failed:', error);
+                    return res.status(500).json({ error: 'Internal server error' });
+                }
+
+                // For each shop, get sample products
+                if (!shops || shops.length === 0) {
+                    return res.json([]);
+                }
+
+                const shopsWithProducts = shops.map(shop => ({
+                    ...shop,
+                    products: [] as any[]
+                }));
+
+                let completed = 0;
+
+                shops.forEach((shop, index) => {
+                    db.query(
+                        `SELECT id, name, price, image_url FROM products WHERE shop_id = ? LIMIT 3`,
+                        [shop.id],
+                        (productError: QueryError | null, products: any[]) => {
+                            if (!productError && products) {
+                                shopsWithProducts[index].products = products;
+                            }
+                            completed++;
+
+                            // When all queries are done, send response
+                            if (completed === shops.length) {
+                                return res.json(shopsWithProducts);
+                            }
+                        }
+                    );
+                });
+            }
+        );
+    };
+}
+
+// Get single shop with all its products (for shop detail page)
+export function getShopDetail() {
+    return (req: Request, res: Response) => {
+        const { shopId } = req.params;
+        if (!shopId) {
+            return res.status(400).json({ error: 'shopId required' });
+        }
+
+        // Get shop info
+        db.query(
+            `SELECT id, name, created_at FROM shops WHERE id = ? LIMIT 1`,
+            [shopId],
+            (error: QueryError | null, shopResults: any[]) => {
+                if (error) {
+                    console.error('Get shop failed:', error);
+                    return res.status(500).json({ error: 'Internal server error' });
+                }
+
+                if (!shopResults || shopResults.length === 0) {
+                    return res.status(404).json({ error: 'Shop not found' });
+                }
+
+                const shop = shopResults[0];
+
+                // Get all products for this shop
+                db.query(
+                    `SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku FROM products WHERE shop_id = ? ORDER BY created_at DESC`,
+                    [shopId],
+                    (productError: QueryError | null, products: any[]) => {
+                        if (productError) {
+                            console.error('Get products failed:', productError);
+                            return res.status(500).json({ error: 'Internal server error' });
+                        }
+
+                        return res.json({
+                            ...shop,
+                            products: products || []
+                        });
+                    }
+                );
+            }
+        );
+    };
+}
