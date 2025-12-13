@@ -1,0 +1,174 @@
+<main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+	<!-- Back Button -->
+	<button 
+		(click)="goBack()"
+		class="mb-6 text-sm text-purple-600 hover:text-purple-700 font-medium inline-flex items-center gap-1 cursor-pointer">
+		← Back to Dashboard
+	</button>
+
+	@if (loading()) {
+		<div class="animate-pulse space-y-6">
+			<div class="h-10 bg-gray-200 rounded w-1/2"></div>
+			<div class="space-y-4">
+				<div class="h-12 bg-gray-200 rounded"></div>
+				<div class="h-32 bg-gray-200 rounded"></div>
+				<div class="h-12 bg-gray-200 rounded"></div>
+				<div class="h-12 bg-gray-200 rounded"></div>
+			</div>
+		</div>
+	} @else {
+		<!-- Edit Form -->
+		@if (product()) {
+			<div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+				<h1 class="text-2xl font-bold text-gray-900 mb-6">Edit Product</h1>
+
+				<form (ngSubmit)="saveProduct()" class="space-y-6">
+					<!-- Product Name -->
+					<div>
+						<div class="flex justify-between items-baseline mb-2">
+							<label class="block text-sm font-medium text-gray-700">
+								Product Name <span class="text-red-600">*</span>
+							</label>
+							<span class="text-xs text-gray-500">
+								{{ formData().name.length }}/{{ NAME_LIMIT }}
+							</span>
+						</div>
+						<input
+							type="text"
+							[(ngModel)]="formData().name"
+							(ngModelChange)="updateFormField('name', $event)"
+							name="name"
+							[maxlength]="NAME_LIMIT"
+							class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+							placeholder="Enter product name"
+							required
+						/>
+						<p class="text-xs text-gray-500 mt-1">
+							{{ getRemainingChars('name') }} characters remaining
+						</p>
+					</div>
+
+					<!-- Product Description -->
+					<div>
+						<div class="flex justify-between items-baseline mb-2">
+							<label class="block text-sm font-medium text-gray-700">
+								Description
+							</label>
+							<span class="text-xs text-gray-500">
+								{{ formData().description.length }}/{{ DESCRIPTION_LIMIT }}
+							</span>
+						</div>
+						<textarea
+							[(ngModel)]="formData().description"
+							(ngModelChange)="updateFormField('description', $event)"
+							name="description"
+							[maxlength]="DESCRIPTION_LIMIT"
+							rows="4"
+							class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
+							placeholder="Enter product description"
+						></textarea>
+						<p class="text-xs text-gray-500 mt-1">
+							{{ getRemainingChars('description') }} characters remaining
+						</p>
+					</div>
+
+					<!-- Price -->
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-2">
+							Price <span class="text-red-600">*</span>
+						</label>
+						<div class="relative">
+							<span class="absolute left-4 top-2 text-gray-700 font-medium">$</span>
+							<input
+								type="number"
+								[(ngModel)]="formData().price"
+								(ngModelChange)="updateFormField('price', $event)"
+								name="price"
+								step="0.01"
+								min="0"
+								class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+								placeholder="0.00"
+								required
+							/>
+						</div>
+					</div>
+
+					<!-- Stock Quantity -->
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-2">
+							Stock Quantity
+						</label>
+						<input
+							type="number"
+							[(ngModel)]="formData().stock_quantity"
+							(ngModelChange)="updateFormField('stock_quantity', $event)"
+							name="stock_quantity"
+							min="0"
+							class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+							placeholder="0"
+						/>
+					</div>
+
+					<!-- Read-Only Fields Section -->
+					<div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+						<p class="text-xs text-gray-600 font-medium mb-3 uppercase tracking-wide">Read-only Information</p>
+						
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<!-- SKU (Read-only) -->
+							<div>
+								<label class="block text-xs font-medium text-gray-700 mb-1">
+									SKU
+								</label>
+								<div class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 text-sm">
+									{{ formData().sku || '—' }}
+								</div>
+							</div>
+
+							<!-- Image URL (Read-only) -->
+							<div>
+								<label class="block text-xs font-medium text-gray-700 mb-1">
+									Image URL
+								</label>
+								<div class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 text-sm truncate">
+									{{ formData().image_url || '—' }}
+								</div>
+							</div>
+						</div>
+
+						<!-- Image Preview -->
+						@if (formData().image_url) {
+							<div class="mt-3">
+								<p class="text-xs text-gray-600 mb-2">Preview:</p>
+								<img 
+									[src]="formData().image_url" 
+									alt="Product preview"
+									class="h-32 w-32 object-cover rounded-lg border border-gray-200"
+									(error)="formData().image_url = ''"
+								/>
+							</div>
+						}
+					</div>
+
+					<!-- Action Buttons -->
+					<div class="flex gap-3 pt-4 border-t border-gray-200">
+						<button
+							type="submit"
+							[disabled]="saving() || !formData().name.trim()"
+							class="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition cursor-pointer"
+						>
+							{{ saving() ? 'Saving...' : 'Save Changes' }}
+						</button>
+						<button
+							type="button"
+							(click)="goBack()"
+							[disabled]="saving()"
+							class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-900 font-semibold rounded-lg transition cursor-pointer"
+						>
+							Cancel
+						</button>
+					</div>
+				</form>
+			</div>
+		}
+	}
+</main>

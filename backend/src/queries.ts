@@ -402,3 +402,156 @@ export function getShopDetail() {
         );
     };
 }
+
+// Update product by ID
+export function updateProduct() {
+    return (req: Request, res: Response) => {
+        const { id } = req.params;
+        const { name, description, price, stock_quantity } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ error: 'Product ID is required' });
+        }
+
+        // Validate required fields
+        if (!name || price === undefined) {
+            return res.status(400).json({ error: 'Product name and price are required' });
+        }
+
+        // Build dynamic UPDATE query based on provided fields
+        // Only allow editing: name, description, price, stock_quantity
+        const updates: string[] = [];
+        const values: any[] = [];
+
+        if (name !== undefined) {
+            updates.push('name = ?');
+            values.push(name);
+        }
+        if (description !== undefined) {
+            updates.push('description = ?');
+            values.push(description);
+        }
+        if (price !== undefined) {
+            updates.push('price = ?');
+            values.push(price);
+        }
+        if (stock_quantity !== undefined) {
+            updates.push('stock_quantity = ?');
+            values.push(stock_quantity);
+        }
+
+        updates.push('updated_at = CURRENT_TIMESTAMP');
+        values.push(id);
+
+        const updateQuery = `UPDATE products SET ${updates.join(', ')} WHERE id = ?`;
+
+        db.query(
+            updateQuery,
+            values,
+            (error: QueryError | null, results: any) => {
+                if (error) {
+                    console.error('Update product failed:', error);
+                    return res.status(500).json({ error: 'Failed to update product' });
+                }
+
+                if (results.affectedRows === 0) {
+                    return res.status(404).json({ error: 'Product not found' });
+                }
+
+                // Fetch updated product to return
+                db.query(
+                    'SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku, created_at, updated_at FROM products WHERE id = ? LIMIT 1',
+                    [id],
+                    (fetchError: QueryError | null, products: any[]) => {
+                        if (fetchError || !products || products.length === 0) {
+                            return res.status(500).json({ error: 'Failed to retrieve updated product' });
+                        }
+
+                        return res.status(200).json({
+                            message: 'Product updated successfully',
+                            product: products[0]
+                        });
+                    }
+                );
+            }
+        );
+    };
+}
+
+export function deleteProduct() {
+    return (req: Request, res: Response) => {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({ error: 'Product ID is required' });
+        }
+
+        // First, fetch the product before deleting (for undo capability)
+        db.query(
+            'SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku, created_at, updated_at FROM products WHERE id = ? LIMIT 1',
+            [id],
+            (fetchError: QueryError | null, products: any[]) => {
+                if (fetchError || !products || products.length === 0) {
+                    return res.status(404).json({ error: 'Product not found' });
+                }
+
+                const productData = products[0];
+
+                // Delete the product
+                db.query(
+                    'DELETE FROM products WHERE id = ?',
+                    [id],
+                    (deleteError: QueryError | null, results: any) => {
+                        if (deleteError) {
+                            console.error('Delete product failed:', deleteError);
+                            return res.status(500).json({ error: 'Failed to delete product' });
+                        }
+
+                        // Return the deleted product data for undo capability on frontend
+                        return res.status(200).json({
+                            message: 'Product deleted successfully',
+                            deletedProduct: productData
+                        });
+                    }
+                );
+            }
+        );
+    };
+}
+
+export function createProduct() {
+    return (req: Request, res: Response) => {
+        const { shop_id, name, description, price, image_url, stock_quantity, sku } = req.body;
+
+        if (!shop_id || !name || price === undefined) {
+            return res.status(400).json({ error: 'shop_id, name, and price are required' });
+        }
+
+        db.query(
+            'INSERT INTO products (shop_id, name, description, price, image_url, stock_quantity, sku) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [shop_id, name, description || null, price, image_url || null, stock_quantity || 0, sku || null],
+            (error: QueryError | null, results: any) => {
+                if (error) {
+                    console.error('Create product failed:', error);
+                    return res.status(500).json({ error: 'Failed to create product' });
+                }
+
+                // Fetch the created product to return
+                db.query(
+                    'SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku, created_at, updated_at FROM products WHERE id = ? LIMIT 1',
+                    [results.insertId],
+                    (fetchError: QueryError | null, products: any[]) => {
+                        if (fetchError || !products || products.length === 0) {
+                            return res.status(500).json({ error: 'Failed to retrieve created product' });
+                        }
+
+                        return res.status(201).json({
+                            message: 'Product created successfully',
+                            product: products[0]
+                        });
+                    }
+                );
+            }
+        );
+    };
+}

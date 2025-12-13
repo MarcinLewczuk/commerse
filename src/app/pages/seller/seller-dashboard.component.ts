@@ -1,5 +1,8 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, AsyncPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ShopService } from '../../services/shop.service';
 import { ProductsService } from '../../services/products.service';
 import { Observable, switchMap } from 'rxjs';
@@ -8,7 +11,7 @@ import { Product } from '../../models/product';
 @Component({
   selector: 'app-seller-dashboard',
   standalone: true,
-  imports: [CommonModule, AsyncPipe],
+  imports: [CommonModule, AsyncPipe, RouterLink],
   template: `
     <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div class="mb-8">
@@ -58,11 +61,14 @@ import { Product } from '../../models/product';
                   }
 
                   <div class="flex gap-2">
-                    <button class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md">
+                    <a [routerLink]="['/seller/products', product.id, 'edit']" class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md text-center">
                       Edit
-                    </button>
-                    <button class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-800 text-sm font-medium rounded-md">
-                      Delete
+                    </a>
+                    <button 
+                      (click)="openDeleteConfirmation(product)"
+                      [disabled]="deleting() === product.id"
+                      class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-300 text-red-800 disabled:text-gray-600 text-sm font-medium rounded-md cursor-pointer">
+                      {{ deleting() === product.id ? 'Deleting...' : 'Delete' }}
                     </button>
                   </div>
                 </div>
@@ -81,14 +87,133 @@ import { Product } from '../../models/product';
 export class SellerDashboardComponent implements OnInit {
   private shopService = inject(ShopService);
   private productsService = inject(ProductsService);
+  private http = inject(HttpClient);
+  private snackBar = inject(MatSnackBar);
+  private readonly apiUrl = 'http://localhost:3000';
 
   shop$!: Observable<any>;
   products$!: Observable<Product[]>;
+
+  // Delete state management
+  deleting = signal<number | null>(null);
+  deletedProducts = new Map<number, { product: Product; undoTimeout: ReturnType<typeof setTimeout> }>();
 
   ngOnInit() {
     this.shop$ = this.shopService.getShopInfo();
     
     // Fetch products by getting shop info first, then fetching products for that shop
+    this.products$ = this.shop$.pipe(
+      switchMap(shop => {
+        if (!shop?.id) {
+          return new Observable<Product[]>(obs => obs.next([]));
+        }
+        return this.productsService.getByShopId(shop.id);
+      })
+    );
+  }
+
+  openDeleteConfirmation(product: Product) {
+    // Name confirmation: user must type the exact product name to delete
+    const productName = prompt(
+      `To delete "${product.name}", please type the product name exactly as shown:\n\n"${product.name}"`,
+      ''
+    );
+
+    if (productName !== product.name) {
+      if (productName !== null) {
+        this.snackBar.open('Product name does not match. Deletion cancelled.', 'Close', { 
+          duration: 4000, 
+          panelClass: ['error-snackbar'] 
+        });
+      }
+      return;
+    }
+
+    // Proceed with deletion
+    this.deleteProduct(product);
+  }
+
+  deleteProduct(product: Product) {
+    this.deleting.set(product.id!);
+
+    this.http.delete<any>(`${this.apiUrl}/products/${product.id}`).subscribe({
+      next: (response) => {
+        this.deleting.set(null);
+
+        // Store the deleted product for undo
+        let undoTimeout: ReturnType<typeof setTimeout>;
+
+        const snackBarRef = this.snackBar.open(
+          `✓ Product "${product.name}" deleted`,
+          'Undo',
+          {
+            duration: 5000,
+            panelClass: ['success-snackbar']
+          }
+        );
+
+        // Set the undo timeout
+        undoTimeout = setTimeout(() => {
+          this.deletedProducts.delete(product.id!);
+        }, 5000);
+
+        // Store for undo reference
+        this.deletedProducts.set(product.id!, { product, undoTimeout });
+
+        // Handle undo action
+        snackBarRef.onAction().subscribe(() => {
+          this.undoDelete(product);
+        });
+
+        // Reload products after deletion
+        setTimeout(() => {
+          this.reloadProducts();
+        }, 100);
+      },
+      error: (err) => {
+        this.deleting.set(null);
+        console.error('Failed to delete product', err);
+        const errorMessage = err?.error?.error || 'Failed to delete product';
+        this.snackBar.open(errorMessage, 'Close', { 
+          duration: 5000, 
+          panelClass: ['error-snackbar'] 
+        });
+      }
+    });
+  }
+
+  undoDelete(product: Product) {
+    const deletedData = this.deletedProducts.get(product.id!);
+    if (!deletedData) {
+      this.snackBar.open('Undo window has closed', 'Close', { duration: 3000 });
+      return;
+    }
+
+    // Clear the timeout
+    clearTimeout(deletedData.undoTimeout);
+
+    // Restore the product by re-creating it
+    this.http.post<any>(`${this.apiUrl}/products`, deletedData.product).subscribe({
+      next: () => {
+        this.deletedProducts.delete(product.id!);
+        this.snackBar.open('✓ Product restored successfully!', 'Close', { 
+          duration: 3000, 
+          panelClass: ['success-snackbar'] 
+        });
+        this.reloadProducts();
+      },
+      error: (err) => {
+        console.error('Failed to restore product', err);
+        this.snackBar.open('Failed to restore product', 'Close', { 
+          duration: 5000, 
+          panelClass: ['error-snackbar'] 
+        });
+      }
+    });
+  }
+
+  reloadProducts() {
+    this.shop$ = this.shopService.getShopInfo();
     this.products$ = this.shop$.pipe(
       switchMap(shop => {
         if (!shop?.id) {

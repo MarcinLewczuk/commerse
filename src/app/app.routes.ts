@@ -6,6 +6,7 @@ import { ProductInfoComponent } from './pages/products/product-info/product-info
 import { AiAssistantComponent } from './pages/ai-assistant/ai-assistant.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { SellerDashboardComponent } from './pages/seller/seller-dashboard.component';
+import { EditProductComponent } from './pages/seller/edit-product/edit-product.component';
 
 export const routes: Routes = [
     {
@@ -42,6 +43,11 @@ export const routes: Routes = [
         path: 'seller/dashboard',
         component: SellerDashboardComponent,
         title: 'My Shop'
+    },
+    {
+        path: 'seller/products/:id/edit',
+        component: EditProductComponent,
+        title: 'Edit Product'
     },
     {
         path: 'callback',

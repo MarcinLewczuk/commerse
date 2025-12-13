@@ -6,7 +6,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import mysql from 'mysql2';
 import bodyParser from 'body-parser';
-import { insert, selectAll, selectColumn, loginUser, selectById, getShopByAuth0UserId, getUserByAuth0Id, upsertUserByAuth0Id, createShop, getAllShopsWithProducts, getShopDetail } from './queries'; // Adjust path if needed
+import { insert, selectAll, selectColumn, loginUser, selectById, getShopByAuth0UserId, getUserByAuth0Id, upsertUserByAuth0Id, createShop, getAllShopsWithProducts, getShopDetail, updateProduct, deleteProduct, createProduct } from './queries'; // Adjust path if needed
 
 // Simple in-memory slug formatter (duplicate logic kept server-side for single fetch by slug)
 function slugify(name: string): string {
@@ -130,3 +130,12 @@ server.get('/shops', getAllShopsWithProducts());
 
 // Get single shop with all products (must come after /shops route)
 server.get('/shops/:shopId', getShopDetail());
+
+// Update a product by ID
+server.put('/products/:id', updateProduct());
+
+// Delete a product by ID
+server.delete('/products/:id', deleteProduct());
+
+// Create a new product
+server.post('/products', createProduct());
