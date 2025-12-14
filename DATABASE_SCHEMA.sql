@@ -6,7 +6,7 @@
 -- Only business logic data is stored in the database
 
 -- ============================================
--- 1. USERS TABLE (MINIMAL)
+-- 1. USERS TABLE
 -- ============================================
 -- Only stores Auth0 ID and role(s)
 CREATE TABLE IF NOT EXISTS users (
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- ============================================
 -- 2. SHOPS TABLE (MINIMAL)
 -- ============================================
--- Stores only essential shop data, owner info comes from Auth0 via user.sub
+-- Owner info comes from Auth0 via user.sub
 CREATE TABLE IF NOT EXISTS shops (
   id INT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(255) NOT NULL UNIQUE,
@@ -35,14 +35,12 @@ CREATE TABLE IF NOT EXISTS shops (
 -- ============================================
 -- 3. PRODUCTS TABLE
 -- ============================================
--- Each product belongs to a shop
 CREATE TABLE IF NOT EXISTS products (
   id INT PRIMARY KEY AUTO_INCREMENT,
   shop_id INT NOT NULL,
   name VARCHAR(255) NOT NULL,
   description TEXT,
   price DECIMAL(10, 2) NOT NULL,
-  image_url VARCHAR(500),
   stock_quantity INT DEFAULT 0,
   sku VARCHAR(100) UNIQUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -51,6 +49,20 @@ CREATE TABLE IF NOT EXISTS products (
   INDEX idx_shop_id (shop_id),
   INDEX idx_name (name),
   INDEX idx_sku (sku)
+);
+
+-- ============================================
+-- 4. PRODUCT_IMAGES TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS product_images (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  product_id INT NOT NULL,
+  image_url VARCHAR(500) NOT NULL,
+  display_order INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  INDEX idx_product_id (product_id),
+  INDEX idx_display_order (display_order)
 );
 
 -- ============================================
@@ -138,26 +150,3 @@ INSERT INTO products (shop_id, name, description, price, image_url, stock_quanti
   28,
   'FASH-BAG-LEATHER-001'
 );
-
--- ============================================
--- USEFUL QUERIES
--- ============================================
-
--- Get user's role and shop (if seller)
--- SELECT role, shop_id FROM users WHERE auth0_id = 'auth0|65a1b2c3d4e5f6g7h8i9';
-
--- Get all products for a specific shop
--- SELECT * FROM products WHERE shop_id = 1;
-
--- Get shop by Auth0 user ID (for sellers only)
--- SELECT s.* FROM shops s
--- JOIN users u ON s.id = u.shop_id
--- WHERE u.auth0_id = 'auth0|65a1b2c3d4e5f6g7h8i9' AND u.role IN ('seller', 'customer_seller');
-
--- Get all shops (public listing)
--- SELECT * FROM shops;
-
--- Get all products from a shop with shop name
--- SELECT p.*, s.name as shop_name FROM products p
--- JOIN shops s ON p.shop_id = s.id
--- WHERE p.shop_id = 1;

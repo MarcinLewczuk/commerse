@@ -25,19 +25,24 @@ export class EditProductComponent implements OnInit {
   error = signal<string | null>(null);
   success = signal<string | null>(null);
 
+  // Image handling
+  selectedImages = signal<{ file: File; preview: string }[]>([]);
+  existingImages = signal<string[]>([]);
+  imagesToRemove = signal<string[]>([]);
+
   // Form fields
   formData = signal<{
     name: string;
     description: string;
     price: number;
-    image_url: string;
+    image_urls: string | string[];
     stock_quantity: number;
     sku: string;
   }>({
     name: '',
     description: '',
     price: 0,
-    image_url: '',
+    image_urls: [],
     stock_quantity: 0,
     sku: ''
   });
@@ -61,15 +66,25 @@ export class EditProductComponent implements OnInit {
     this.error.set(null);
     this.success.set(null);
 
-    // Fetch product by ID from backend (we'll need to add this endpoint)
+    // Fetch product by ID from backend
     this.http.get<Product>(`${this.apiUrl}/products/${productId}`).subscribe({
       next: (data) => {
         this.product.set(data);
+        
+        // Parse image URLs
+        let imageUrlsArray: string[] = [];
+        if (Array.isArray(data.image_urls)) {
+          imageUrlsArray = data.image_urls;
+        } else if (typeof data.image_urls === 'string') {
+          imageUrlsArray = data.image_urls ? [data.image_urls] : [];
+        }
+        
+        this.existingImages.set(imageUrlsArray);
         this.formData.set({
           name: data.name || '',
           description: data.description || '',
           price: data.price || 0,
-          image_url: data.image_url || '',
+          image_urls: imageUrlsArray,
           stock_quantity: data.stock_quantity || 0,
           sku: data.sku || ''
         });
@@ -110,6 +125,46 @@ export class EditProductComponent implements OnInit {
     this.error.set(null);
     this.success.set(null);
 
+    // First, upload any new images if present
+    if (this.selectedImages().length > 0) {
+      this.uploadNewImages().then(
+        (newImageUrls) => {
+          this.updateProduct(productId, newImageUrls);
+        }
+      ).catch((err) => {
+        this.saving.set(false);
+        this.snackBar.open('Failed to upload images', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+      });
+    } else {
+      this.updateProduct(productId, []);
+    }
+  }
+
+  private uploadNewImages(): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      this.selectedImages().forEach(img => {
+        formData.append('images', img.file);
+      });
+
+      this.http.post<{ imageUrls: string[] }>(`${this.apiUrl}/upload`, formData).subscribe({
+        next: (response) => {
+          resolve(response.imageUrls);
+        },
+        error: (err) => {
+          reject(err);
+        }
+      });
+    });
+  }
+
+  private updateProduct(productId: string, newImageUrls: string[]) {
+    // Combine existing images (minus removed ones) with newly uploaded images
+    const finalImageUrls = [
+      ...this.existingImages().filter(url => !this.imagesToRemove().includes(url)),
+      ...newImageUrls
+    ];
+
     // Only send editable fields to backend
     const dataToSend = {
       name: this.formData().name,
@@ -120,20 +175,20 @@ export class EditProductComponent implements OnInit {
 
     this.http.put<any>(`${this.apiUrl}/products/${productId}`, dataToSend).subscribe({
       next: (response) => {
-        this.saving.set(false);
-        this.snackBar.open('✓ Product updated successfully!', 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
-        
-        // Update product in memory
-        if (response.product) {
-          this.product.set(response.product);
-          this.formData.set({
-            name: response.product.name || '',
-            description: response.product.description || '',
-            price: response.product.price || 0,
-            image_url: response.product.image_url || '',
-            stock_quantity: response.product.stock_quantity || 0,
-            sku: response.product.sku || ''
-          });
+        // Now update images if needed
+        if (this.imagesToRemove().length > 0 || newImageUrls.length > 0) {
+          this.updateProductImages(productId, finalImageUrls);
+        } else {
+          this.saving.set(false);
+          this.snackBar.open('✓ Product updated successfully!', 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
+          
+          // Update product in memory
+          if (response.product) {
+            this.product.set(response.product);
+            this.existingImages.set(finalImageUrls);
+            this.selectedImages.set([]);
+            this.imagesToRemove.set([]);
+          }
         }
       },
       error: (err) => {
@@ -145,11 +200,66 @@ export class EditProductComponent implements OnInit {
     });
   }
 
+  private updateProductImages(productId: string, imageUrls: string[]) {
+    // Convert all URLs to relative paths before sending to backend
+    const relativeImageUrls = imageUrls.map(url => {
+      // If URL starts with http, extract the relative path (e.g., /images/products/xxx.jpg)
+      if (url.startsWith('http')) {
+        // Remove the protocol and domain, keeping only the path
+        const pathStart = url.indexOf('/', url.indexOf('://') + 3);
+        return url.substring(pathStart);
+      }
+      return url;
+    });
+
+    // Send the final image list to backend for update
+    this.http.put<any>(`${this.apiUrl}/products/${productId}/images`, { image_urls: relativeImageUrls }).subscribe({
+      next: (response) => {
+        this.saving.set(false);
+        this.snackBar.open('✓ Product updated successfully!', 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
+        this.selectedImages.set([]);
+        this.imagesToRemove.set([]);
+        
+        // Update with the product returned from API response
+        if (response.product) {
+          this.product.set(response.product);
+          
+          // Parse image URLs from response
+          let imageUrlsArray: string[] = [];
+          if (Array.isArray(response.product.image_urls)) {
+            imageUrlsArray = response.product.image_urls;
+          } else if (typeof response.product.image_urls === 'string') {
+            imageUrlsArray = response.product.image_urls ? [response.product.image_urls] : [];
+          }
+          
+          this.existingImages.set(imageUrlsArray);
+          this.formData.set({
+            name: response.product.name || '',
+            description: response.product.description || '',
+            price: response.product.price || 0,
+            image_urls: imageUrlsArray,
+            stock_quantity: response.product.stock_quantity || 0,
+            sku: response.product.sku || ''
+          });
+        } else {
+          // Fallback: fetch product if response doesn't include it
+          this.fetchProduct(productId);
+        }
+      },
+      error: (err) => {
+        this.saving.set(false);
+        console.error('Failed to update product images:', err);
+        const errorMessage = err?.error?.error || 'Failed to update product images';
+        this.snackBar.open(errorMessage, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+      }
+    });
+  }
+
   goBack() {
     this.router.navigate(['/seller/dashboard']);
   }
 
-  updateFormField(field: 'name' | 'description' | 'price' | 'image_url' | 'stock_quantity' | 'sku', value: any) {
+  updateFormField(field: 'name' | 'description' | 'price' | 'image_urls' | 'stock_quantity' | 'sku', value: any) {
     const current = this.formData();
     const updated = { ...current, [field]: value };
     this.formData.set(updated);
@@ -167,5 +277,103 @@ export class EditProductComponent implements OnInit {
 
   displayPrice(price: number): string {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+  }
+
+  getFirstImage(): string | null {
+    const imageUrls = this.formData().image_urls;
+    if (!imageUrls) {
+      return null;
+    }
+    try {
+      let images: string[];
+      if (typeof imageUrls === 'string') {
+        // Handle comma-separated string from GROUP_CONCAT
+        images = imageUrls.includes(',') 
+          ? imageUrls.split(',')
+          : [imageUrls];
+      } else {
+        images = Array.isArray(imageUrls) ? imageUrls : [];
+      }
+      return images.length > 0 ? images[0] : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  clearImages() {
+    this.formData.set({ ...this.formData(), image_urls: [] });
+  }
+
+  onImagesSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files || []);
+    
+    // Limit to 10 total images (existing + new)
+    const totalImages = this.existingImages().length + this.selectedImages().length + files.length;
+    if (totalImages > 10) {
+      this.snackBar.open('Maximum 10 images allowed', 'Close', { duration: 3000, panelClass: ['error-snackbar'] });
+      return;
+    }
+
+    const newImages: { file: File; preview: string }[] = [];
+    let processed = 0;
+
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          newImages.push({
+            file,
+            preview: reader.result as string
+          });
+          processed++;
+
+          if (processed === files.length) {
+            this.selectedImages.set([...this.selectedImages(), ...newImages]);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Reset input
+    if (input) {
+      input.value = '';
+    }
+  }
+
+  removeExistingImage(imageUrl: string) {
+    this.imagesToRemove.set([...this.imagesToRemove(), imageUrl]);
+    this.existingImages.set(
+      this.existingImages().filter(url => url !== imageUrl)
+    );
+  }
+
+  removeNewImage(index: number) {
+    const images = this.selectedImages();
+    this.selectedImages.set(images.filter((_, i) => i !== index));
+  }
+
+  undoRemoveImage(imageUrl: string) {
+    this.existingImages.set([...this.existingImages(), imageUrl]);
+    this.imagesToRemove.set(
+      this.imagesToRemove().filter(url => url !== imageUrl)
+    );
+  }
+
+  getAllImages(): { type: 'existing' | 'new', url?: string, preview?: string, index?: number }[] {
+    const images: { type: 'existing' | 'new', url?: string, preview?: string, index?: number }[] = [];
+    
+    // Add existing images
+    this.existingImages().forEach(url => {
+      images.push({ type: 'existing', url });
+    });
+    
+    // Add new images
+    this.selectedImages().forEach((img, index) => {
+      images.push({ type: 'new', preview: img.preview, index });
+    });
+    
+    return images;
   }
 }

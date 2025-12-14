@@ -42,16 +42,25 @@
 			>
 						<div class="grid grid-flow-col auto-cols-[75%] sm:auto-cols-[50%] md:auto-cols-[33%] lg:auto-cols-[25%] gap-4 px-12">
 								@for (p of featured(); track p.id) {
-															<a
-																class="block bg-white border border-gray-200 shadow-sm transition rounded-md overflow-hidden focus:outline-none"
-																[routerLink]="['/products', slugify(p.name)]"
+									<a
+										class="block bg-white border border-gray-200 shadow-sm transition rounded-md overflow-hidden focus:outline-none"
+										[routerLink]="['/products', slugify(p.name)]"
 									>
+										<!-- Product Image (Main Only) -->
 										<div class="aspect-4/3 bg-gray-100">
-											<img
-												[src]="p.image_url"
-												[alt]="p.name"
-												class="w-full h-full object-cover"
-											/>
+											@if (getAllProductImages(p).length > 0) {
+												<img
+													[src]="getAllProductImages(p)[0]"
+													[alt]="p.name"
+													class="w-full h-full object-cover"
+												/>
+											} @else {
+												<img
+													[src]="getFirstProductImage(p)"
+													[alt]="p.name"
+													class="w-full h-full object-cover"
+												/>
+											}
 										</div>
 										<div class="p-3">
 											<div class="text-sm text-gray-500">Product</div>

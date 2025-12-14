@@ -37,9 +37,6 @@ export class UserService {
           auth0_id: auth0Id,
           role: 'customer'
         }).pipe(
-          tap(userInfo => {
-            console.log('User upserted successfully:', userInfo);
-          }),
           catchError(error => {
             console.error('Failed to upsert user:', error);
             return of(null as any);
@@ -65,9 +62,6 @@ export class UserService {
           auth0_id: auth0Id,
           shop_name: shopName
         }).pipe(
-          tap(response => {
-            console.log('Shop created successfully:', response);
-          }),
           catchError(error => {
             console.error('Failed to create shop:', error);
             throw error;
