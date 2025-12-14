@@ -109,44 +109,122 @@
 						/>
 					</div>
 
+					<!-- Product Images -->
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-3">
+							Product Images
+						</label>
+
+						<!-- Image Upload Input -->
+						<div class="mb-4">
+							<label class="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition">
+								<div class="text-center">
+									<svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+										<path d="M28 8H12a4 4 0 00-4 4v20a4 4 0 004 4h24a4 4 0 004-4V20m-8-12l-4-4m0 0l-4 4m4-4v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+									</svg>
+									<p class="mt-2 text-sm text-gray-600">
+										<span class="font-medium text-purple-600">Click to upload</span> or drag and drop
+									</p>
+									<p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+									<p class="text-xs text-gray-500 mt-1">
+										Max {{ 10 - (existingImages().length + selectedImages().length) }} more image{{ 10 - (existingImages().length + selectedImages().length) !== 1 ? 's' : '' }}
+									</p>
+								</div>
+								<input 
+									type="file" 
+									class="hidden" 
+									multiple 
+									accept="image/*"
+									(change)="onImagesSelected($event)"
+									[disabled]="existingImages().length + selectedImages().length >= 10"
+								/>
+							</label>
+						</div>
+
+						<!-- Existing Images -->
+						@if (existingImages().length > 0) {
+							<div class="mb-4">
+								<p class="text-sm font-medium text-gray-700 mb-2">Current Images</p>
+								<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+									@for (imageUrl of existingImages(); track imageUrl) {
+										<div class="relative group">
+											<img 
+												[src]="imageUrl" 
+												alt="Product image"
+												class="w-full h-24 object-cover rounded-lg border border-gray-200"
+											/>
+											<button
+												type="button"
+												(click)="removeExistingImage(imageUrl)"
+												class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+											>
+												<span class="text-white text-2xl">×</span>
+											</button>
+										</div>
+									}
+								</div>
+							</div>
+						}
+
+						<!-- New Images to Upload -->
+						@if (selectedImages().length > 0) {
+							<div class="mb-4">
+								<p class="text-sm font-medium text-gray-700 mb-2">New Images</p>
+								<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+									@for (image of selectedImages(); track $index) {
+										<div class="relative group">
+											<img 
+												[src]="image.preview" 
+												alt="New image preview"
+												class="w-full h-24 object-cover rounded-lg border border-purple-200 border-dashed"
+											/>
+											<button
+												type="button"
+												(click)="removeNewImage($index)"
+												class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+											>
+												<span class="text-white text-2xl">×</span>
+											</button>
+										</div>
+									}
+								</div>
+							</div>
+						}
+
+						<!-- Images to Remove Warning -->
+						@if (imagesToRemove().length > 0) {
+							<div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+								<p class="text-sm text-green-800 font-medium mb-2">
+									{{ imagesToRemove().length }} image{{ imagesToRemove().length !== 1 ? 's' : '' }} deleted
+								</p>
+								<div class="flex flex-wrap gap-2">
+									@for (imageUrl of imagesToRemove(); track imageUrl) {
+										<button
+											type="button"
+											(click)="undoRemoveImage(imageUrl)"
+											class="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded transition"
+										>
+											Undo delete
+										</button>
+									}
+								</div>
+							</div>
+						}
+					</div>
+
 					<!-- Read-Only Fields Section -->
 					<div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
 						<p class="text-xs text-gray-600 font-medium mb-3 uppercase tracking-wide">Read-only Information</p>
 						
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<!-- SKU (Read-only) -->
-							<div>
-								<label class="block text-xs font-medium text-gray-700 mb-1">
-									SKU
-								</label>
-								<div class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 text-sm">
-									{{ formData().sku || '—' }}
-								</div>
-							</div>
-
-							<!-- Image URL (Read-only) -->
-							<div>
-								<label class="block text-xs font-medium text-gray-700 mb-1">
-									Image URL
-								</label>
-								<div class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 text-sm truncate">
-									{{ formData().image_url || '—' }}
-								</div>
+						<!-- SKU (Read-only) -->
+						<div>
+							<label class="block text-xs font-medium text-gray-700 mb-1">
+								SKU
+							</label>
+							<div class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 text-sm">
+								{{ formData().sku || '—' }}
 							</div>
 						</div>
-
-						<!-- Image Preview -->
-						@if (formData().image_url) {
-							<div class="mt-3">
-								<p class="text-xs text-gray-600 mb-2">Preview:</p>
-								<img 
-									[src]="formData().image_url" 
-									alt="Product preview"
-									class="h-32 w-32 object-cover rounded-lg border border-gray-200"
-									(error)="formData().image_url = ''"
-								/>
-							</div>
-						}
 					</div>
 
 					<!-- Action Buttons -->

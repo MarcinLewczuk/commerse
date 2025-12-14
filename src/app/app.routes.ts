@@ -7,6 +7,7 @@ import { AiAssistantComponent } from './pages/ai-assistant/ai-assistant.componen
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { SellerDashboardComponent } from './pages/seller/seller-dashboard.component';
 import { EditProductComponent } from './pages/seller/edit-product/edit-product.component';
+import { CreateProductComponent } from './pages/seller/create-product/create-product.component';
 
 export const routes: Routes = [
     {
@@ -43,6 +44,11 @@ export const routes: Routes = [
         path: 'seller/dashboard',
         component: SellerDashboardComponent,
         title: 'My Shop'
+    },
+    {
+        path: 'seller/products/create',
+        component: CreateProductComponent,
+        title: 'Create Product'
     },
     {
         path: 'seller/products/:id/edit',

@@ -2,6 +2,7 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { slugify } from '../../models/product';
 
 export interface ShopWithProducts {
   id: number;
@@ -13,7 +14,7 @@ export interface ShopWithProducts {
     id: number;
     name: string;
     price: number;
-    image_url?: string;
+    image_urls?: string | string[];
   }[];
 }
 
@@ -40,7 +41,8 @@ export class ShopsComponent implements OnInit {
     this.error.set(null);
     this.http.get<ShopWithProducts[]>(`${this.apiUrl}/shops`).subscribe({
       next: (data) => {
-        this.shops.set(Array.isArray(data) ? data : []);
+        const filteredShops = (Array.isArray(data) ? data : []).filter(shop => shop.products && shop.products.length > 0);
+        this.shops.set(filteredShops);
         this.loading.set(false);
       },
       error: (err) => {
@@ -64,7 +66,41 @@ export class ShopsComponent implements OnInit {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
   }
 
-  getProductImage(imageUrl: string | undefined): string | null {
-    return imageUrl || null;
+  getProductImage(imageUrls: string | string[] | undefined): string | null {
+    if (!imageUrls) return null;
+    try {
+      let images: string[];
+      if (typeof imageUrls === 'string') {
+        // Handle comma-separated string from GROUP_CONCAT
+        images = imageUrls.includes(',') 
+          ? imageUrls.split(',')
+          : [imageUrls];
+      } else {
+        images = Array.isArray(imageUrls) ? imageUrls : [];
+      }
+      return images.length > 0 ? images[0] : null;
+    } catch (e) {
+      return null;
+    }
   }
+
+  getAllProductImages(imageUrls: string | string[] | undefined): string[] {
+    if (!imageUrls) return [];
+    try {
+      let images: string[];
+      if (typeof imageUrls === 'string') {
+        // Handle comma-separated string from GROUP_CONCAT
+        images = imageUrls.includes(',') 
+          ? imageUrls.split(',')
+          : [imageUrls];
+      } else {
+        images = Array.isArray(imageUrls) ? imageUrls : [];
+      }
+      return images;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  slugify = slugify;
 }

@@ -186,7 +186,6 @@ export class ProfileComponent {
 
     this.userService.createShop(this.shopName).subscribe({
       next: (response) => {
-        console.log('Shop created:', response);
         this.isCreatingShop.set(false);
         this.showShopForm.set(false);
         this.shopName = '';

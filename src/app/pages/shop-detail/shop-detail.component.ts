@@ -9,7 +9,7 @@ export interface Product {
   name: string;
   description?: string;
   price: number;
-  image_url?: string;
+  image_urls?: string | string[];
   stock_quantity?: number;
   sku?: string;
 }
@@ -72,8 +72,40 @@ export class ShopDetailComponent implements OnInit {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
   }
 
-  getProductImage(imageUrl: string | undefined): string | null {
-    return imageUrl || null;
+  getProductImage(imageUrls: string | string[] | undefined): string | null {
+    if (!imageUrls) return null;
+    try {
+      let images: string[];
+      if (typeof imageUrls === 'string') {
+        // Handle comma-separated string from GROUP_CONCAT
+        images = imageUrls.includes(',') 
+          ? imageUrls.split(',')
+          : [imageUrls];
+      } else {
+        images = Array.isArray(imageUrls) ? imageUrls : [];
+      }
+      return images.length > 0 ? images[0] : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  getAllProductImages(imageUrls: string | string[] | undefined): string[] {
+    if (!imageUrls) return [];
+    try {
+      let images: string[];
+      if (typeof imageUrls === 'string') {
+        // Handle comma-separated string from GROUP_CONCAT
+        images = imageUrls.includes(',') 
+          ? imageUrls.split(',')
+          : [imageUrls];
+      } else {
+        images = Array.isArray(imageUrls) ? imageUrls : [];
+      }
+      return images;
+    } catch (e) {
+      return [];
+    }
   }
 
   goBack() {

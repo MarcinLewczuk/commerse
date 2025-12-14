@@ -6,7 +6,9 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import mysql from 'mysql2';
 import bodyParser from 'body-parser';
-import { insert, selectAll, selectColumn, loginUser, selectById, getShopByAuth0UserId, getUserByAuth0Id, upsertUserByAuth0Id, createShop, getAllShopsWithProducts, getShopDetail, updateProduct, deleteProduct, createProduct } from './queries'; // Adjust path if needed
+import multer from 'multer';
+import fs from 'fs';
+import { insert, selectAll, selectColumn, loginUser, selectById, getShopByAuth0UserId, getUserByAuth0Id, upsertUserByAuth0Id, createShop, getAllShopsWithProducts, getShopDetail, updateProduct, updateProductImages, deleteProduct, createProduct } from './queries'; // Adjust path if needed
 
 // Simple in-memory slug formatter (duplicate logic kept server-side for single fetch by slug)
 function slugify(name: string): string {
@@ -23,6 +25,34 @@ server.use(bodyParser.json());
 server.use(cors());
 // Serve static product images from root public/images folder
 server.use('/images', express.static(path.resolve(__dirname, '../../public/images')));
+
+// Configure multer for image uploads
+const uploadsDir = path.resolve(__dirname, '../../public/images/products');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+});
 
 // Database connection
 const db = mysql.createConnection({
@@ -74,30 +104,96 @@ server.get('/users/email', (req: Request, res: Response) => {
   selectColumn('users', 'email')(req, res);
 });
 
-// Products
+// Get all products with images
 server.get('/products', (req: Request, res: Response) => {
-  selectAll('products')(req, res);
+  db.query(
+    `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku, p.created_at, p.updated_at,
+            GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+     FROM products p
+     LEFT JOIN product_images pi ON p.id = pi.product_id
+     GROUP BY p.id
+     ORDER BY p.created_at DESC`,
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error('GET all products failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      // Convert comma-separated image strings to arrays and prepend full URL
+      const apiUrl = `http://localhost:${process.env['PORT']}`;
+      const productsWithImages = results.map((p: any) => {
+        const result = {
+          ...p,
+          image_urls: p.image_urls 
+            ? p.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+            : []
+        };
+        return result;
+      });
+      return res.json(productsWithImages);
+    }
+  );
 });
 
-// Deprecated id route retained temporarily (could remove later)
+// Get product by ID with images
 server.get('/products/:id', (req: Request, res: Response) => {
-  selectById('products')(req, res);
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ error: 'Product ID is required' });
+  }
+  db.query(
+    `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku, p.created_at, p.updated_at,
+            GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+     FROM products p
+     LEFT JOIN product_images pi ON p.id = pi.product_id
+     WHERE p.id = ?
+     GROUP BY p.id
+     LIMIT 1`,
+    [id],
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error(`GET product by id failed:`, error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      if (!results || results.length === 0) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      const product = results[0];
+      // Convert comma-separated image strings to arrays and prepend full URL
+      const apiUrl = `http://localhost:${process.env['PORT']}`;
+      product.image_urls = product.image_urls 
+        ? product.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+        : [];
+      return res.json(product);
+    }
+  );
 });
 
 // Slug route: match product by slugified name
 server.get('/products/slug/:slug', (req: Request, res: Response) => {
   const { slug } = req.params;
-  db.query('SELECT * FROM products', (error: mysql.QueryError | null, results: any[]) => {
-    if (error) {
-      console.error('Products slug fetch failed:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+  db.query(
+    `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku, p.created_at, p.updated_at,
+            GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+     FROM products p
+     LEFT JOIN product_images pi ON p.id = pi.product_id
+     GROUP BY p.id`,
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error('Products slug fetch failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      const match = results.find((p: any) => slugify(p.name || '') === slug);
+      if (!match) {
+        return res.status(404).json({ error: 'product not found' });
+      }
+      // Convert comma-separated image strings to arrays and prepend full URL
+      const apiUrl = `http://localhost:${process.env['PORT']}`;
+      match.image_urls = match.image_urls 
+        ? match.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+        : [];
+      return res.json(match);
     }
-    const match = results.find((p: any) => slugify(p.name || '') === slug);
-    if (!match) {
-      return res.status(404).json({ error: 'product not found' });
-    }
-    return res.json(match);
-  });
+  );
 });
 
 // Get products by shop ID
@@ -107,14 +203,31 @@ server.get('/shops/:shopId/products', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'shopId required' });
   }
   db.query(
-    'SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku FROM products WHERE shop_id = ? ORDER BY created_at DESC',
+    `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku,
+            GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+     FROM products p
+     LEFT JOIN product_images pi ON p.id = pi.product_id
+     WHERE p.shop_id = ?
+     GROUP BY p.id
+     ORDER BY p.created_at DESC`,
     [shopId],
     (error: mysql.QueryError | null, results: any[]) => {
       if (error) {
         console.error('Products fetch by shop failed:', error);
         return res.status(500).json({ error: 'Internal server error' });
       }
-      return res.json(results);
+      // Convert comma-separated image strings to arrays and prepend full URL
+      const apiUrl = `http://localhost:${process.env['PORT']}`;
+      const productsWithImages = results.map((p: any) => {
+        const result = {
+          ...p,
+          image_urls: p.image_urls 
+            ? p.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+            : []
+        };
+        return result;
+      });
+      return res.json(productsWithImages);
     }
   );
 });
@@ -134,8 +247,27 @@ server.get('/shops/:shopId', getShopDetail());
 // Update a product by ID
 server.put('/products/:id', updateProduct());
 
+// Update product images by product ID
+server.put('/products/:id/images', updateProductImages());
+
 // Delete a product by ID
 server.delete('/products/:id', deleteProduct());
 
 // Create a new product
 server.post('/products', createProduct());
+
+// Upload product images
+server.post('/upload', upload.array('images', 10), (req: Request, res: Response) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'No images uploaded' });
+  }
+
+  const imageUrls = (req.files as Express.Multer.File[]).map(file => {
+    return `/images/products/${file.filename}`;
+  });
+
+  return res.status(200).json({
+    message: 'Images uploaded successfully',
+    imageUrls
+  });
+});

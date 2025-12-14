@@ -316,45 +316,78 @@ export function loginUser(tableName: string) {
 // Get all shops with their products (for shops listing page)
 export function getAllShopsWithProducts() {
     return (req: Request, res: Response) => {
-        db.query(
-            `SELECT s.id, s.name, s.created_at FROM shops s ORDER BY s.created_at DESC`,
-            (error: QueryError | null, shops: any[]) => {
-                if (error) {
-                    console.error('Get shops failed:', error);
-                    return res.status(500).json({ error: 'Internal server error' });
-                }
-
-                // For each shop, get sample products
-                if (!shops || shops.length === 0) {
-                    return res.json([]);
-                }
-
-                const shopsWithProducts = shops.map(shop => ({
-                    ...shop,
-                    products: [] as any[]
-                }));
-
-                let completed = 0;
-
-                shops.forEach((shop, index) => {
-                    db.query(
-                        `SELECT id, name, price, image_url FROM products WHERE shop_id = ? LIMIT 3`,
-                        [shop.id],
-                        (productError: QueryError | null, products: any[]) => {
-                            if (!productError && products) {
-                                shopsWithProducts[index].products = products;
-                            }
-                            completed++;
-
-                            // When all queries are done, send response
-                            if (completed === shops.length) {
-                                return res.json(shopsWithProducts);
-                            }
+        try {
+            db.query(
+                `SELECT s.id, s.name, s.created_at FROM shops s ORDER BY s.created_at DESC`,
+                (error: QueryError | null, shops: any[]) => {
+                    try {
+                        if (error) {
+                            console.error('Get shops failed:', error);
+                            return res.status(500).json({ error: 'Internal server error' });
                         }
-                    );
-                });
-            }
-        );
+
+                        // For each shop, get sample products
+                        if (!shops || shops.length === 0) {
+                            return res.json([]);
+                        }
+
+                        const shopsWithProducts = shops.map(shop => ({
+                            ...shop,
+                            products: [] as any[]
+                        }));
+
+                        let completed = 0;
+
+                        shops.forEach((shop, index) => {
+                            db.query(
+                                `SELECT p.id, p.name, p.price,
+                                        GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+                                 FROM products p
+                                 LEFT JOIN product_images pi ON p.id = pi.product_id
+                                 WHERE p.shop_id = ?
+                                 GROUP BY p.id
+                                 LIMIT 3`,
+                                [shop.id],
+                                (productError: QueryError | null, products: any[]) => {
+                                    try {
+                                        if (!productError && products) {
+                                            // Convert comma-separated image strings to arrays and prepend full URL
+                                            const apiUrl = `http://localhost:${process.env['PORT']}`;
+                                            const productsWithImages = products.map(p => ({
+                                                ...p,
+                                                image_urls: p.image_urls 
+                                                  ? p.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+                                                  : []
+                                            }));
+                                            shopsWithProducts[index].products = productsWithImages;
+                                        }
+                                        completed++;
+
+                                        // When all queries are done, send response
+                                        if (completed === shops.length) {
+                                            return res.json(shopsWithProducts);
+                                        }
+                                    } catch (err) {
+                                        console.error('Error in product query callback:', err);
+                                        if (!res.headersSent) {
+                                            res.status(500).json({ error: 'Internal server error' });
+                                        }
+                                    }
+                                }
+                            );
+                        });
+                    } catch (err) {
+                        console.error('Error in shops query callback:', err);
+                        if (!res.headersSent) {
+                            res.status(500).json({ error: 'Internal server error' });
+                        }
+                    }
+                }
+            );
+        } catch (err) {
+            console.error('Error in getAllShopsWithProducts:', err);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     };
 }
 
@@ -384,7 +417,13 @@ export function getShopDetail() {
 
                 // Get all products for this shop
                 db.query(
-                    `SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku FROM products WHERE shop_id = ? ORDER BY created_at DESC`,
+                    `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku,
+                            GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+                     FROM products p
+                     LEFT JOIN product_images pi ON p.id = pi.product_id
+                     WHERE p.shop_id = ?
+                     GROUP BY p.id
+                     ORDER BY p.created_at DESC`,
                     [shopId],
                     (productError: QueryError | null, products: any[]) => {
                         if (productError) {
@@ -392,9 +431,21 @@ export function getShopDetail() {
                             return res.status(500).json({ error: 'Internal server error' });
                         }
 
+                        // Convert comma-separated image strings to arrays
+                        const apiUrl = `http://localhost:${process.env['PORT']}`;
+                        const productsWithImages = products.map(p => {
+                            const result = {
+                                ...p,
+                                image_urls: p.image_urls 
+                                  ? p.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+                                  : []
+                            };
+                            return result;
+                        });
+
                         return res.json({
                             ...shop,
-                            products: products || []
+                            products: productsWithImages || []
                         });
                     }
                 );
@@ -460,17 +511,134 @@ export function updateProduct() {
 
                 // Fetch updated product to return
                 db.query(
-                    'SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku, created_at, updated_at FROM products WHERE id = ? LIMIT 1',
+                    `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku, p.created_at, p.updated_at,
+                            GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+                     FROM products p
+                     LEFT JOIN product_images pi ON p.id = pi.product_id
+                     WHERE p.id = ?
+                     GROUP BY p.id
+                     LIMIT 1`,
                     [id],
                     (fetchError: QueryError | null, products: any[]) => {
                         if (fetchError || !products || products.length === 0) {
                             return res.status(500).json({ error: 'Failed to retrieve updated product' });
                         }
 
+                        const product = products[0];
+                        const apiUrl = `http://localhost:${process.env['PORT']}`;
+                        product.image_urls = product.image_urls 
+                          ? product.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+                          : [];
+
                         return res.status(200).json({
                             message: 'Product updated successfully',
-                            product: products[0]
+                            product: product
                         });
+                    }
+                );
+            }
+        );
+    };
+}
+
+export function updateProductImages() {
+    return (req: Request, res: Response) => {
+        const { id } = req.params;
+        const { image_urls } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ error: 'Product ID is required' });
+        }
+
+        if (!Array.isArray(image_urls)) {
+            return res.status(400).json({ error: 'image_urls must be an array' });
+        }
+
+        // Strip the API URL prefix from image URLs before storing (only store relative paths)
+        const apiUrl = `http://localhost:${process.env['PORT']}`;
+        const relativePaths = image_urls.map((url: string) => {
+            // Remove the API URL prefix if present
+            return url.startsWith(apiUrl) ? url.replace(apiUrl, '') : url;
+        });
+
+        // Delete all existing images for this product
+        db.query(
+            'DELETE FROM product_images WHERE product_id = ?',
+            [id],
+            (deleteError: QueryError | null) => {
+                if (deleteError) {
+                    console.error('Failed to delete product images:', deleteError);
+                    return res.status(500).json({ error: 'Failed to update product images' });
+                }
+
+                // Insert new images if any
+                if (relativePaths.length === 0) {
+                    // Fetch and return the updated product with no images
+                    db.query(
+                        `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku, p.created_at, p.updated_at,
+                                GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+                         FROM products p
+                         LEFT JOIN product_images pi ON p.id = pi.product_id
+                         WHERE p.id = ?
+                         GROUP BY p.id
+                         LIMIT 1`,
+                        [id],
+                        (fetchError: QueryError | null, products: any[]) => {
+                            if (fetchError || !products || products.length === 0) {
+                                return res.status(500).json({ error: 'Failed to retrieve updated product' });
+                            }
+
+                            const product = products[0];
+                            product.image_urls = product.image_urls 
+                              ? product.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+                              : [];
+
+                            return res.status(200).json({ 
+                                message: 'Product images updated successfully',
+                                product: product
+                            });
+                        }
+                    );
+                    return;
+                }
+
+                const imageData = relativePaths.map((url: string, index: number) => [id, url, index + 1]);
+                
+                db.query(
+                    'INSERT INTO product_images (product_id, image_url, display_order) VALUES ?',
+                    [imageData],
+                    (insertError: QueryError | null) => {
+                        if (insertError) {
+                            console.error('Failed to insert product images:', insertError);
+                            return res.status(500).json({ error: 'Failed to update product images' });
+                        }
+
+                        // Fetch and return the updated product with images
+                        db.query(
+                            `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku, p.created_at, p.updated_at,
+                                    GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+                             FROM products p
+                             LEFT JOIN product_images pi ON p.id = pi.product_id
+                             WHERE p.id = ?
+                             GROUP BY p.id
+                             LIMIT 1`,
+                            [id],
+                            (fetchError: QueryError | null, products: any[]) => {
+                                if (fetchError || !products || products.length === 0) {
+                                    return res.status(500).json({ error: 'Failed to retrieve updated product' });
+                                }
+
+                                const product = products[0];
+                                product.image_urls = product.image_urls 
+                                  ? product.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+                                  : [];
+
+                                return res.status(200).json({ 
+                                    message: 'Product images updated successfully',
+                                    product: product
+                                });
+                            }
+                        );
                     }
                 );
             }
@@ -488,7 +656,13 @@ export function deleteProduct() {
 
         // First, fetch the product before deleting (for undo capability)
         db.query(
-            'SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku, created_at, updated_at FROM products WHERE id = ? LIMIT 1',
+            `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku, p.created_at, p.updated_at,
+                    GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+             FROM products p
+             LEFT JOIN product_images pi ON p.id = pi.product_id
+             WHERE p.id = ?
+             GROUP BY p.id
+             LIMIT 1`,
             [id],
             (fetchError: QueryError | null, products: any[]) => {
                 if (fetchError || !products || products.length === 0) {
@@ -496,6 +670,10 @@ export function deleteProduct() {
                 }
 
                 const productData = products[0];
+                const apiUrl = `http://localhost:${process.env['PORT']}`;
+                productData.image_urls = productData.image_urls 
+                  ? productData.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+                  : [];
 
                 // Delete the product
                 db.query(
@@ -519,39 +697,116 @@ export function deleteProduct() {
     };
 }
 
+// Helper function to generate a unique SKU
+function generateSKU(shopId: number, productName: string, productId: number): string {
+    // Format: SHOP{shopId}-{productNameAcronym}-{productId}
+    // Example: SHOP1-WNC-001 for "Wireless Noise-Cancelling Headphones" in shop 1 with id 1
+    
+    // Get acronym from product name (first letter of each word, max 3 letters)
+    const acronym = productName
+        .split(' ')
+        .slice(0, 3)
+        .map(word => word.charAt(0).toUpperCase())
+        .join('');
+    
+    // Pad product ID to 4 digits
+    const paddedId = String(productId).padStart(4, '0');
+    
+    // Combine: SHOP{shopId}-{acronym}-{productId}
+    return `SHOP${shopId}-${acronym}-${paddedId}`;
+}
+
 export function createProduct() {
     return (req: Request, res: Response) => {
-        const { shop_id, name, description, price, image_url, stock_quantity, sku } = req.body;
+        const { shop_id, name, description, price, image_urls, stock_quantity, sku } = req.body;
 
         if (!shop_id || !name || price === undefined) {
             return res.status(400).json({ error: 'shop_id, name, and price are required' });
         }
 
         db.query(
-            'INSERT INTO products (shop_id, name, description, price, image_url, stock_quantity, sku) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [shop_id, name, description || null, price, image_url || null, stock_quantity || 0, sku || null],
+            'INSERT INTO products (shop_id, name, description, price, stock_quantity, sku) VALUES (?, ?, ?, ?, ?, ?)',
+            [shop_id, name, description || null, price, stock_quantity || 0, null],
             (error: QueryError | null, results: any) => {
                 if (error) {
                     console.error('Create product failed:', error);
-                    return res.status(500).json({ error: 'Failed to create product' });
+                    return res.status(500).json({ error: 'Failed to create product: ' + error.message });
                 }
 
-                // Fetch the created product to return
+                const productId = results.insertId;
+
+                // Generate SKU using the newly created product ID
+                const generatedSku = generateSKU(shop_id, name, productId);
+
+                // Update the product with the generated SKU
                 db.query(
-                    'SELECT id, shop_id, name, description, price, image_url, stock_quantity, sku, created_at, updated_at FROM products WHERE id = ? LIMIT 1',
-                    [results.insertId],
-                    (fetchError: QueryError | null, products: any[]) => {
-                        if (fetchError || !products || products.length === 0) {
-                            return res.status(500).json({ error: 'Failed to retrieve created product' });
+                    'UPDATE products SET sku = ? WHERE id = ?',
+                    [generatedSku, productId],
+                    (updateError: QueryError | null) => {
+                        if (updateError) {
+                            console.error('Failed to update SKU:', updateError);
+                            // Continue anyway, SKU generation is not critical
                         }
 
-                        return res.status(201).json({
-                            message: 'Product created successfully',
-                            product: products[0]
-                        });
+                        // Insert product images if any
+                        if (image_urls && image_urls.length > 0) {
+                            const imageInserts = image_urls.map((url: string, index: number) => [
+                                productId,
+                                url,
+                                index
+                            ]);
+
+                            db.query(
+                                'INSERT INTO product_images (product_id, image_url, display_order) VALUES ?',
+                                [imageInserts],
+                                (imageError: QueryError | null) => {
+                                    if (imageError) {
+                                        console.error('Failed to insert product images:', imageError);
+                                        // Continue anyway, images are not critical
+                                    }
+
+                                    // Fetch the created product with images
+                                    fetchProductWithImages(productId, res);
+                                }
+                            );
+                        } else {
+                            // Fetch the created product (without images)
+                            fetchProductWithImages(productId, res);
+                        }
                     }
                 );
             }
         );
     };
+}
+
+// Helper function to fetch product with all its images
+function fetchProductWithImages(productId: number, res: Response) {
+    db.query(
+        `SELECT p.id, p.shop_id, p.name, p.description, p.price, p.stock_quantity, p.sku, p.created_at, p.updated_at,
+                GROUP_CONCAT(pi.image_url ORDER BY pi.display_order) as image_urls
+         FROM products p
+         LEFT JOIN product_images pi ON p.id = pi.product_id
+         WHERE p.id = ?
+         GROUP BY p.id`,
+        [productId],
+        (fetchError: QueryError | null, products: any[]) => {
+            if (fetchError || !products || products.length === 0) {
+                console.error('Fetch created product failed:', fetchError);
+                return res.status(500).json({ error: 'Failed to retrieve created product' });
+            }
+
+            const product = products[0];
+            // Convert comma-separated string back to array and prepend full URL
+            const apiUrl = `http://localhost:${process.env['PORT']}`;
+            product.image_urls = product.image_urls 
+              ? product.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+              : [];
+
+            return res.status(201).json({
+                message: 'Product created successfully',
+                product
+            });
+        }
+    );
 }

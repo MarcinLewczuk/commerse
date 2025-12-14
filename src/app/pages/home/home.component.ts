@@ -48,6 +48,44 @@ export class HomeComponent implements OnInit {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
 
+  getFirstProductImage(product: Product): string {
+    if (!product.image_urls) {
+      return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3C/svg%3E';
+    }
+    try {
+      let images: string[];
+      if (typeof product.image_urls === 'string') {
+        // Handle comma-separated string from GROUP_CONCAT
+        images = product.image_urls.includes(',') 
+          ? product.image_urls.split(',')
+          : [product.image_urls];
+      } else {
+        images = Array.isArray(product.image_urls) ? product.image_urls : [];
+      }
+      return images.length > 0 ? images[0] : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3C/svg%3E';
+    } catch (e) {
+      return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3C/svg%3E';
+    }
+  }
+
+  getAllProductImages(product: Product): string[] {
+    if (!product.image_urls) return [];
+    try {
+      let images: string[];
+      if (typeof product.image_urls === 'string') {
+        // Handle comma-separated string from GROUP_CONCAT
+        images = product.image_urls.includes(',') 
+          ? product.image_urls.split(',')
+          : [product.image_urls];
+      } else {
+        images = Array.isArray(product.image_urls) ? product.image_urls : [];
+      }
+      return images;
+    } catch (e) {
+      return [];
+    }
+  }
+
   // Slug helper used by template links
   slugify(name: string): string {
     return this.productsService.slugify(name);
