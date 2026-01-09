@@ -10,16 +10,16 @@
 	@if (loading()) {
 		<div class="space-y-6">
 			@for (i of [1,2,3]; track i) {
-				<div class="animate-pulse border border-gray-200 rounded-lg p-6 w-[90vw]">
-					<div class="flex items-start gap-6">
-						<div class="w-24 h-24 bg-gray-200 rounded-full shrink-0"></div>
-						<div class="flex-1">
-							<div class="h-6 bg-gray-200 rounded w-1/4 mb-2"></div>
-							<div class="h-4 bg-gray-200 rounded w-1/6 mb-4"></div>
-							<div class="flex gap-4">
-								<div class="h-32 w-32 bg-gray-200 rounded"></div>
-								<div class="h-32 w-32 bg-gray-200 rounded"></div>
-								<div class="h-32 w-32 bg-gray-200 rounded"></div>
+				<div class="animate-pulse border border-gray-200 rounded-lg p-4 sm:p-6 w-full">
+					<div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+						<div class="w-20 h-20 sm:w-24 sm:h-24 bg-gray-200 rounded-full shrink-0 mx-auto sm:mx-0"></div>
+						<div class="flex-1 w-full">
+							<div class="h-6 bg-gray-200 rounded w-3/4 sm:w-1/4 mb-2 mx-auto sm:mx-0"></div>
+							<div class="h-4 bg-gray-200 rounded w-1/2 sm:w-1/6 mb-4 mx-auto sm:mx-0"></div>
+							<div class="flex gap-4 overflow-x-auto">
+								<div class="h-24 w-24 sm:h-32 sm:w-32 bg-gray-200 rounded shrink-0"></div>
+								<div class="h-24 w-24 sm:h-32 sm:w-32 bg-gray-200 rounded shrink-0"></div>
+								<div class="h-24 w-24 sm:h-32 sm:w-32 bg-gray-200 rounded shrink-0"></div>
 							</div>
 						</div>
 					</div>
@@ -38,33 +38,35 @@
 	} @else {
 		<div class="space-y-6">
 			@for (shop of shops(); track shop.id) {
-				<div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition w-[90vw]">
-					<div class="flex items-start">
-						<!-- Shop Header (Smaller) -->
-						<div class="bg-linear-to-r from-purple-100 to-indigo-100 p-6 flex flex-col items-center justify-center w-32 shrink-0">
+				<div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition w-full max-w-4xl mx-auto">
+					<div class="flex flex-col sm:flex-row items-stretch">
+						<!-- Shop Header -->
+						<div class="bg-linear-to-r from-purple-100 to-indigo-100 p-4 sm:p-6 flex flex-row sm:flex-col items-center justify-start sm:justify-center gap-4 sm:gap-0 sm:w-32 shrink-0">
 							@if (getSellerPicture(shop)) {
 								<img 
 									[src]="getSellerPicture(shop)!" 
 									[alt]="getSellerName(shop)"
-									class="w-20 h-20 rounded-full mb-3 object-cover border-4 border-white"
+									class="w-16 h-16 sm:w-20 sm:h-20 rounded-full sm:mb-3 object-cover border-4 border-white shrink-0"
 								/>
 							} @else {
-								<div class="w-20 h-20 rounded-full mb-3 bg-gray-300 flex items-center justify-center text-gray-600 border-4 border-white">
-									<span class="text-2xl">👤</span>
+								<div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full sm:mb-3 bg-gray-300 flex items-center justify-center text-gray-600 border-4 border-white shrink-0">
+									<span class="text-xl sm:text-2xl">👤</span>
 								</div>
 							}
-							<h2 class="text-sm font-bold text-gray-900 text-center">{{ shop.name }}</h2>
-							<p class="text-xs text-gray-600 text-center mt-1">{{ getSellerName(shop) }}</p>
+							<div class="flex-1 sm:flex-none text-left sm:text-center">
+								<h2 class="text-base sm:text-sm font-bold text-gray-900">{{ shop.name }}</h2>
+								<p class="text-xs text-gray-600 mt-1">{{ getSellerName(shop) }}</p>
+							</div>
 						</div>
 
 						<!-- Products Section (Horizontal) -->
-						<div class="p-6 flex-1">
+						<div class="p-4 sm:p-6 flex-1">
 							@if (shop.products && shop.products.length > 0) {
-								<div class="flex gap-4 overflow-x-auto pb-2">
+								<div class="flex gap-3 sm:gap-4 overflow-x-auto pb-2">
 									@for (product of shop.products.slice(0, 4); track product.id) {
 										<a [routerLink]="['/products', slugify(product.name)]" class="shrink-0 hover:opacity-80 transition">
-											<!-- Product Image (Smaller) -->
-											<div class="w-32 h-32 rounded-md overflow-hidden bg-gray-100 mb-2">
+											<!-- Product Image -->
+											<div class="w-24 h-24 sm:w-32 sm:h-32 rounded-md overflow-hidden bg-gray-100 mb-2">
 												@if (getAllProductImages(product.image_urls).length > 0) {
 													<img 
 														[src]="getAllProductImages(product.image_urls)[0]" 
@@ -77,7 +79,7 @@
 											</div>
 
 											<!-- Product Info -->
-											<p class="text-xs font-medium text-gray-900 line-clamp-2 w-32">{{ product.name }}</p>
+											<p class="text-xs font-medium text-gray-900 line-clamp-2 w-24 sm:w-32">{{ product.name }}</p>
 											<p class="text-xs font-semibold text-purple-600">{{ displayPrice(product.price) }}</p>
 										</a>
 									}
@@ -88,8 +90,8 @@
 						</div>
 
 						<!-- Shop Link Button -->
-						<div class="p-6 flex items-center shrink-0">
-							<a [routerLink]="['/shop', shop.id]" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-md transition whitespace-nowrap">
+						<div class="p-4 sm:p-6 flex items-center justify-center sm:justify-start shrink-0 border-t sm:border-t-0 sm:border-l border-gray-200">
+							<a [routerLink]="['/shop', shop.id]" class="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-md transition whitespace-nowrap text-center">
 								View Shop
 							</a>
 						</div>
