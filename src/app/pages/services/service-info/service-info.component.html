@@ -1,0 +1,121 @@
+<!-- Loading State -->
+@if (loading()) {
+  <div class="flex justify-center items-center min-h-screen">
+    <div class="text-gray-600">Loading service...</div>
+  </div>
+}
+
+<!-- Error State -->
+@if (error()) {
+  <div class="container mx-auto px-4 py-8">
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <strong class="font-bold">Error:</strong>
+      <span class="block sm:inline">{{ error() }}</span>
+    </div>
+  </div>
+}
+
+<!-- Service Details -->
+@if (!loading() && !error() && service()) {
+  <div class="min-h-screen bg-gray-50">
+    <!-- Back Button -->
+    <div class="container mx-auto px-4 py-4">
+      <button (click)="goBack()" 
+              class="flex items-center text-blue-600 hover:text-blue-800 transition-colors">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back
+      </button>
+    </div>
+
+    <div class="container mx-auto px-4 pb-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Image Gallery Section -->
+        <div class="space-y-4">
+          <!-- Main Image -->
+          @if (images().length > 0) {
+            <div class="relative bg-white rounded-lg shadow-md overflow-hidden"
+                 (mouseenter)="onMouseEnter()"
+                 (mouseleave)="onMouseLeave()"
+                 (mousemove)="onMouseMove($event)">
+              <img [src]="images()[selectedImageIndex()]" 
+                   [alt]="service()?.name"
+                   class="w-full h-96 object-cover">
+              
+              <!-- Zoom Overlay -->
+              @if (isZooming() && zoomPosition()) {
+                <div class="absolute inset-0 pointer-events-none overflow-hidden">
+                  <div class="absolute inset-0 bg-white/90"
+                       [style.backgroundImage]="'url(' + images()[selectedImageIndex()] + ')'"
+                       [style.backgroundSize]="'200%'"
+                       [style.backgroundPosition]="zoomPosition()!.x + '% ' + zoomPosition()!.y + '%'">
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Thumbnail Gallery -->
+            @if (images().length > 1) {
+              <div class="grid grid-cols-5 gap-2">
+                @for (image of images(); track $index) {
+                  <button (click)="selectImage($index)"
+                          [class.ring-2]="selectedImageIndex() === $index"
+                          [class.ring-blue-500]="selectedImageIndex() === $index"
+                          class="relative bg-white rounded-lg shadow overflow-hidden hover:opacity-80 transition-opacity">
+                    <img [src]="image" 
+                         [alt]="'Thumbnail ' + ($index + 1)"
+                         class="w-full h-20 object-cover">
+                  </button>
+                }
+              </div>
+            }
+          } @else {
+            <div class="bg-gray-200 rounded-lg shadow-md h-96 flex items-center justify-center">
+              <svg class="w-24 h-24 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/>
+              </svg>
+            </div>
+          }
+        </div>
+
+        <!-- Service Information Section -->
+        <div class="space-y-6">
+          <!-- Service Name & Price -->
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">{{ service()?.name }}</h1>
+            
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-4xl font-bold text-blue-600">
+                ${{ service()?.price }}
+              </div>
+              @if (service()?.duration_minutes) {
+                <div class="text-xl text-gray-600">
+                  <svg class="w-6 h-6 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  {{ service()!.duration_minutes }} minutes
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Service Description -->
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3">Description</h2>
+            <p class="text-gray-600 leading-relaxed whitespace-pre-wrap">{{ service()?.description }}</p>
+          </div>
+
+          <!-- Booking/Contact Button -->
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <button class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold 
+                           hover:bg-blue-700 transition-colors">
+              Book This Service
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

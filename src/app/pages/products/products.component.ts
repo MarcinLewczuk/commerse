@@ -49,7 +49,20 @@ export class ProductsComponent implements OnInit {
   }
 
   imageSrc(p: Product): string | null {
-    return p.image_url || null;
+    if (!p.image_urls) return null;
+    
+    // Handle both string (comma-separated) and array formats
+    if (typeof p.image_urls === 'string') {
+      const images = p.image_urls.split(',');
+      return images.length > 0 ? images[0] : null;
+    }
+    
+    // Handle array format
+    if (Array.isArray(p.image_urls) && p.image_urls.length > 0) {
+      return p.image_urls[0];
+    }
+    
+    return null;
   }
 
   slug(p: Product): string {

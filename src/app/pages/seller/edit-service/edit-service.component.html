@@ -1,0 +1,255 @@
+<main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+	<!-- Back Button -->
+	<button 
+		(click)="goBack()"
+		class="mb-6 text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1 cursor-pointer">
+		← Back to Dashboard
+	</button>
+
+	@if (loading()) {
+		<div class="animate-pulse space-y-6">
+			<div class="h-10 bg-gray-200 rounded w-1/2"></div>
+			<div class="space-y-4">
+				<div class="h-12 bg-gray-200 rounded"></div>
+				<div class="h-32 bg-gray-200 rounded"></div>
+				<div class="h-12 bg-gray-200 rounded"></div>
+				<div class="h-12 bg-gray-200 rounded"></div>
+			</div>
+		</div>
+	} @else {
+		<!-- Edit Form -->
+		@if (service()) {
+			<div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+				<h1 class="text-2xl font-bold text-gray-900 mb-6">Edit Service</h1>
+
+				<form (ngSubmit)="saveService()" class="space-y-6">
+					<!-- Service Name -->
+					<div>
+						<div class="flex justify-between items-baseline mb-2">
+							<label class="block text-sm font-medium text-gray-700">
+								Service Name <span class="text-red-600">*</span>
+							</label>
+							<span class="text-xs text-gray-500">
+								{{ formData().name.length }}/{{ NAME_LIMIT }}
+							</span>
+						</div>
+						<input
+							type="text"
+							[(ngModel)]="formData().name"
+							(ngModelChange)="updateFormField('name', $event)"
+							name="name"
+							[maxlength]="NAME_LIMIT"
+							class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+							placeholder="Enter service name"
+							required
+						/>
+						<p class="text-xs text-gray-500 mt-1">
+							{{ getRemainingChars('name') }} characters remaining
+						</p>
+					</div>
+
+					<!-- Service Description -->
+					<div>
+						<div class="flex justify-between items-baseline mb-2">
+							<label class="block text-sm font-medium text-gray-700">
+								Description
+							</label>
+							<span class="text-xs text-gray-500">
+								{{ formData().description.length }}/{{ DESCRIPTION_LIMIT }}
+							</span>
+						</div>
+						<textarea
+							[(ngModel)]="formData().description"
+							(ngModelChange)="updateFormField('description', $event)"
+							name="description"
+							[maxlength]="DESCRIPTION_LIMIT"
+							rows="4"
+							class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
+							placeholder="Enter service description"
+						></textarea>
+						<p class="text-xs text-gray-500 mt-1">
+							{{ getRemainingChars('description') }} characters remaining
+						</p>
+					</div>
+
+					<!-- Price and Duration -->
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<!-- Price -->
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2">
+								Price <span class="text-red-600">*</span>
+							</label>
+							<div class="relative">
+								<span class="absolute left-4 top-2 text-gray-700 font-medium">$</span>
+								<input
+									type="number"
+									[(ngModel)]="formData().price"
+									(ngModelChange)="updateFormField('price', $event)"
+									name="price"
+									step="0.01"
+									min="0.01"
+									class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+									placeholder="0.00"
+									required
+								/>
+							</div>
+						</div>
+
+						<!-- Duration -->
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2">
+								Duration (minutes) <span class="text-red-600">*</span>
+							</label>
+							<input
+								type="number"
+								[(ngModel)]="formData().duration_minutes"
+								(ngModelChange)="updateFormField('duration_minutes', $event)"
+								name="duration_minutes"
+								min="1"
+								class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+								placeholder="30"
+								required
+							/>
+						</div>
+					</div>
+
+					<!-- Read-only Information -->
+					@if (formData().service_code) {
+						<div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+							<p class="text-xs text-gray-600 font-medium mb-3 uppercase tracking-wide">Read-only Information</p>
+							<div>
+								<label class="block text-xs font-medium text-gray-700 mb-1">Service Code</label>
+								<div class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 text-sm">
+									{{ formData().service_code }}
+								</div>
+								<p class="text-xs text-gray-500 mt-1">This unique identifier is automatically generated and cannot be changed.</p>
+							</div>
+						</div>
+					}
+
+					<!-- Service Images -->
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-3">
+							Service Images
+						</label>
+
+						<!-- Image Upload Input -->
+						<div class="mb-4">
+							<label class="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
+								<div class="text-center">
+									<svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+										<path d="M28 8H12a4 4 0 00-4 4v20a4 4 0 004 4h24a4 4 0 004-4V20m-8-12l-4-4m0 0l-4 4m4-4v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+									</svg>
+									<p class="mt-2 text-sm text-gray-600">
+										<span class="font-medium text-blue-600">Click to upload</span> or drag and drop
+									</p>
+									<p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+									<p class="text-xs text-gray-500 mt-1">
+										Max {{ 10 - (existingImages().length + selectedImages().length) }} more image{{ 10 - (existingImages().length + selectedImages().length) !== 1 ? 's' : '' }}
+									</p>
+								</div>
+								<input 
+									type="file" 
+									class="hidden" 
+									multiple 
+									accept="image/*"
+									(change)="onImagesSelected($event)"
+									[disabled]="existingImages().length + selectedImages().length >= 10"
+								/>
+							</label>
+						</div>
+
+						<!-- Existing Images -->
+						@if (existingImages().length > 0) {
+							<div class="mb-4">
+								<p class="text-sm font-medium text-gray-700 mb-2">Current Images</p>
+								<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+									@for (imageUrl of existingImages(); track imageUrl) {
+										<div class="relative group">
+											<img 
+												[src]="imageUrl" 
+												alt="Service image"
+												class="w-full h-24 object-cover rounded-lg border border-gray-200"
+											/>
+											<button
+												type="button"
+												(click)="removeExistingImage(imageUrl)"
+												class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+											>
+												<span class="text-white text-2xl">×</span>
+											</button>
+										</div>
+									}
+								</div>
+							</div>
+						}
+
+						<!-- New Images to Upload -->
+						@if (selectedImages().length > 0) {
+							<div class="mb-4">
+								<p class="text-sm font-medium text-gray-700 mb-2">New Images</p>
+								<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+									@for (image of selectedImages(); track $index) {
+										<div class="relative group">
+											<img 
+												[src]="image.preview" 
+												alt="New image preview"
+												class="w-full h-24 object-cover rounded-lg border border-blue-200 border-dashed"
+											/>
+											<button
+												type="button"
+												(click)="removeNewImage($index)"
+												class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+											>
+												<span class="text-white text-2xl">×</span>
+											</button>
+										</div>
+									}
+								</div>
+							</div>
+						}
+
+						<!-- Images to Remove Warning -->
+						@if (imagesToRemove().length > 0) {
+							<div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+								<p class="text-sm text-green-800 font-medium mb-2">
+									{{ imagesToRemove().length }} image{{ imagesToRemove().length !== 1 ? 's' : '' }} will be deleted
+								</p>
+								<div class="flex flex-wrap gap-2">
+									@for (imageUrl of imagesToRemove(); track imageUrl) {
+										<button
+											type="button"
+											(click)="undoRemoveImage(imageUrl)"
+											class="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded transition"
+										>
+											Undo delete
+										</button>
+									}
+								</div>
+							</div>
+						}
+					</div>
+
+					<!-- Action Buttons -->
+					<div class="flex gap-3 pt-4 border-t border-gray-200">
+						<button
+							type="submit"
+							[disabled]="saving() || !formData().name.trim() || formData().price <= 0 || formData().duration_minutes <= 0"
+							class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition cursor-pointer"
+						>
+							{{ saving() ? 'Saving...' : 'Save Changes' }}
+						</button>
+						<button
+							type="button"
+							(click)="goBack()"
+							[disabled]="saving()"
+							class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-900 font-semibold rounded-lg transition cursor-pointer"
+						>
+							Cancel
+						</button>
+					</div>
+				</form>
+			</div>
+		}
+	}
+</main>

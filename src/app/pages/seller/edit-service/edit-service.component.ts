@@ -4,22 +4,22 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Product } from '../../../models/product';
+import { Service } from '../../../models/service';
 
 @Component({
-  selector: 'app-edit-product',
-  standalone: true,
+  selector: 'app-edit-service',
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './edit-product.component.html'
+  templateUrl: './edit-service.component.html',
+  styleUrl: './edit-service.component.css'
 })
-export class EditProductComponent implements OnInit {
+export class EditServiceComponent implements OnInit {
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
   private readonly apiUrl = 'http://localhost:3000';
 
-  product = signal<Product | null>(null);
+  service = signal<Service | null>(null);
   loading = signal<boolean>(true);
   saving = signal<boolean>(false);
   error = signal<string | null>(null);
@@ -35,16 +35,16 @@ export class EditProductComponent implements OnInit {
     name: string;
     description: string;
     price: number;
+    duration_minutes: number;
+    service_code: string;
     image_urls: string | string[];
-    stock_quantity: number;
-    sku: string;
   }>({
     name: '',
     description: '',
     price: 0,
-    image_urls: [],
-    stock_quantity: 0,
-    sku: ''
+    duration_minutes: 0,
+    service_code: '',
+    image_urls: []
   });
 
   // Character limits
@@ -52,31 +52,30 @@ export class EditProductComponent implements OnInit {
   readonly DESCRIPTION_LIMIT = 500;
 
   ngOnInit() {
-    const productId = this.route.snapshot.paramMap.get('id');
-    if (!productId) {
-      this.error.set('Product ID not found');
+    const serviceId = this.route.snapshot.paramMap.get('id');
+    if (!serviceId) {
+      this.error.set('Service ID not found');
       this.loading.set(false);
       return;
     }
-    this.fetchProduct(productId);
+    this.fetchService(serviceId);
   }
 
-  fetchProduct(productId: string) {
+  fetchService(serviceId: string) {
     this.loading.set(true);
     this.error.set(null);
     this.success.set(null);
 
-    // Fetch product by ID from backend
-    this.http.get<Product>(`${this.apiUrl}/products/${productId}`).subscribe({
+    this.http.get<Service>(`${this.apiUrl}/services/${serviceId}`).subscribe({
       next: (data) => {
-        this.product.set(data);
+        this.service.set(data);
         
         // Parse image URLs
         let imageUrlsArray: string[] = [];
         if (Array.isArray(data.image_urls)) {
           imageUrlsArray = data.image_urls;
         } else if (typeof data.image_urls === 'string') {
-          imageUrlsArray = data.image_urls ? [data.image_urls] : [];
+          imageUrlsArray = data.image_urls ? data.image_urls.split(',') : [];
         }
         
         this.existingImages.set(imageUrlsArray);
@@ -84,18 +83,18 @@ export class EditProductComponent implements OnInit {
           name: data.name || '',
           description: data.description || '',
           price: data.price || 0,
-          image_urls: imageUrlsArray,
-          stock_quantity: data.stock_quantity || 0,
-          sku: data.sku || ''
+          duration_minutes: data.duration_minutes || 0,
+          service_code: data.service_code || '',
+          image_urls: imageUrlsArray
         });
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Failed to load product', err);
+        console.error('Failed to load service', err);
         const status = err?.status;
-        let message = 'Failed to load product';
+        let message = 'Failed to load service';
         if (status === 404) {
-          message = 'Product not found';
+          message = 'Service not found';
         }
         this.snackBar.open(message, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
         this.loading.set(false);
@@ -103,21 +102,26 @@ export class EditProductComponent implements OnInit {
     });
   }
 
-  saveProduct() {
-    const productId = this.route.snapshot.paramMap.get('id');
-    if (!productId) {
-      this.snackBar.open('Product ID not found', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+  saveService() {
+    const serviceId = this.route.snapshot.paramMap.get('id');
+    if (!serviceId) {
+      this.snackBar.open('Service ID not found', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
       return;
     }
 
     // Validate required fields
     if (!this.formData().name.trim()) {
-      this.snackBar.open('Product name is required', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+      this.snackBar.open('Service name is required', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
       return;
     }
 
-    if (this.formData().price < 0) {
-      this.snackBar.open('Price must be a positive number', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+    if (this.formData().price <= 0) {
+      this.snackBar.open('Price must be greater than 0', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+      return;
+    }
+
+    if (this.formData().duration_minutes <= 0) {
+      this.snackBar.open('Duration must be greater than 0', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
       return;
     }
 
@@ -129,14 +133,14 @@ export class EditProductComponent implements OnInit {
     if (this.selectedImages().length > 0) {
       this.uploadNewImages().then(
         (newImageUrls) => {
-          this.updateProduct(productId, newImageUrls);
+          this.updateService(serviceId, newImageUrls);
         }
       ).catch((err) => {
         this.saving.set(false);
         this.snackBar.open('Failed to upload images', 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
       });
     } else {
-      this.updateProduct(productId, []);
+      this.updateService(serviceId, []);
     }
   }
 
@@ -147,7 +151,7 @@ export class EditProductComponent implements OnInit {
         formData.append('images', img.file);
       });
 
-      this.http.post<{ imageUrls: string[] }>(`${this.apiUrl}/upload/products`, formData).subscribe({
+      this.http.post<{ imageUrls: string[] }>(`${this.apiUrl}/upload/services`, formData).subscribe({
         next: (response) => {
           resolve(response.imageUrls);
         },
@@ -158,7 +162,7 @@ export class EditProductComponent implements OnInit {
     });
   }
 
-  private updateProduct(productId: string, newImageUrls: string[]) {
+  private updateService(serviceId: string, newImageUrls: string[]) {
     // Combine existing images (minus removed ones) with newly uploaded images
     const finalImageUrls = [
       ...this.existingImages().filter(url => !this.imagesToRemove().includes(url)),
@@ -170,21 +174,21 @@ export class EditProductComponent implements OnInit {
       name: this.formData().name,
       description: this.formData().description,
       price: this.formData().price,
-      stock_quantity: this.formData().stock_quantity
+      duration_minutes: this.formData().duration_minutes
     };
 
-    this.http.put<any>(`${this.apiUrl}/products/${productId}`, dataToSend).subscribe({
+    this.http.put<any>(`${this.apiUrl}/services/${serviceId}`, dataToSend).subscribe({
       next: (response) => {
         // Now update images if needed
         if (this.imagesToRemove().length > 0 || newImageUrls.length > 0) {
-          this.updateProductImages(productId, finalImageUrls);
+          this.updateServiceImages(serviceId, finalImageUrls);
         } else {
           this.saving.set(false);
-          this.snackBar.open('✓ Product updated successfully!', 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
+          this.snackBar.open('✓ Service updated successfully!', 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
           
-          // Update product in memory
-          if (response.product) {
-            this.product.set(response.product);
+          // Update service in memory
+          if (response.service) {
+            this.service.set(response.service);
             this.existingImages.set(finalImageUrls);
             this.selectedImages.set([]);
             this.imagesToRemove.set([]);
@@ -193,63 +197,57 @@ export class EditProductComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        console.error('Failed to update product', err);
-        const errorMessage = err?.error?.error || 'Failed to update product';
+        console.error('Failed to update service', err);
+        const errorMessage = err?.error?.error || 'Failed to update service';
         this.snackBar.open(errorMessage, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
       }
     });
   }
 
-  private updateProductImages(productId: string, imageUrls: string[]) {
+  private updateServiceImages(serviceId: string, imageUrls: string[]) {
     // Convert all URLs to relative paths before sending to backend
     const relativeImageUrls = imageUrls.map(url => {
-      // If URL starts with http, extract the relative path (e.g., /images/products/xxx.jpg)
       if (url.startsWith('http')) {
-        // Remove the protocol and domain, keeping only the path
         const pathStart = url.indexOf('/', url.indexOf('://') + 3);
         return url.substring(pathStart);
       }
       return url;
     });
 
-    // Send the final image list to backend for update
-    this.http.put<any>(`${this.apiUrl}/products/${productId}/images`, { image_urls: relativeImageUrls }).subscribe({
+    this.http.put<any>(`${this.apiUrl}/services/${serviceId}/images`, { image_urls: relativeImageUrls }).subscribe({
       next: (response) => {
         this.saving.set(false);
-        this.snackBar.open('✓ Product updated successfully!', 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
+        this.snackBar.open('✓ Service updated successfully!', 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
         this.selectedImages.set([]);
         this.imagesToRemove.set([]);
         
-        // Update with the product returned from API response
-        if (response.product) {
-          this.product.set(response.product);
+        if (response.service) {
+          this.service.set(response.service);
           
-          // Parse image URLs from response
           let imageUrlsArray: string[] = [];
-          if (Array.isArray(response.product.image_urls)) {
-            imageUrlsArray = response.product.image_urls;
-          } else if (typeof response.product.image_urls === 'string') {
-            imageUrlsArray = response.product.image_urls ? [response.product.image_urls] : [];
+          if (Array.isArray(response.service.image_urls)) {
+            imageUrlsArray = response.service.image_urls;
+          } else if (typeof response.service.image_urls === 'string') {
+            imageUrlsArray = response.service.image_urls ? response.service.image_urls.split(',') : [];
           }
           
           this.existingImages.set(imageUrlsArray);
           this.formData.set({
-            name: response.product.name || '',
-            description: response.product.description || '',
-            price: response.product.price || 0,
-            image_urls: imageUrlsArray,
-            stock_quantity: response.product.stock_quantity || 0,
-            sku: response.product.sku || ''
+            name: response.service.name || '',
+            description: response.service.description || '',
+            price: response.service.price || 0,
+            duration_minutes: response.service.duration_minutes || 0,
+            service_code: response.service.service_code || '',
+            image_urls: imageUrlsArray
           });
         } else {
-          // Fallback: fetch product if response doesn't include it
-          this.fetchProduct(productId);
+          this.fetchService(serviceId);
         }
       },
       error: (err) => {
         this.saving.set(false);
-        console.error('Failed to update product images:', err);
-        const errorMessage = err?.error?.error || 'Failed to update product images';
+        console.error('Failed to update service images:', err);
+        const errorMessage = err?.error?.error || 'Failed to update service images';
         this.snackBar.open(errorMessage, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
       }
     });
@@ -259,7 +257,7 @@ export class EditProductComponent implements OnInit {
     this.router.navigate(['/seller/dashboard']);
   }
 
-  updateFormField(field: 'name' | 'description' | 'price' | 'image_urls' | 'stock_quantity' | 'sku', value: any) {
+  updateFormField(field: 'name' | 'description' | 'price' | 'duration_minutes' | 'image_urls', value: any) {
     const current = this.formData();
     const updated = { ...current, [field]: value };
     this.formData.set(updated);
@@ -275,40 +273,10 @@ export class EditProductComponent implements OnInit {
     return this.formData()[field].length > limit;
   }
 
-  displayPrice(price: number): string {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
-  }
-
-  getFirstImage(): string | null {
-    const imageUrls = this.formData().image_urls;
-    if (!imageUrls) {
-      return null;
-    }
-    try {
-      let images: string[];
-      if (typeof imageUrls === 'string') {
-        // Handle comma-separated string from GROUP_CONCAT
-        images = imageUrls.includes(',') 
-          ? imageUrls.split(',')
-          : [imageUrls];
-      } else {
-        images = Array.isArray(imageUrls) ? imageUrls : [];
-      }
-      return images.length > 0 ? images[0] : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  clearImages() {
-    this.formData.set({ ...this.formData(), image_urls: [] });
-  }
-
   onImagesSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files || []);
     
-    // Limit to 10 total images (existing + new)
     const totalImages = this.existingImages().length + this.selectedImages().length + files.length;
     if (totalImages > 10) {
       this.snackBar.open('Maximum 10 images allowed', 'Close', { duration: 3000, panelClass: ['error-snackbar'] });
@@ -336,7 +304,6 @@ export class EditProductComponent implements OnInit {
       }
     });
 
-    // Reset input
     if (input) {
       input.value = '';
     }
@@ -364,12 +331,10 @@ export class EditProductComponent implements OnInit {
   getAllImages(): { type: 'existing' | 'new', url?: string, preview?: string, index?: number }[] {
     const images: { type: 'existing' | 'new', url?: string, preview?: string, index?: number }[] = [];
     
-    // Add existing images
     this.existingImages().forEach(url => {
       images.push({ type: 'existing', url });
     });
     
-    // Add new images
     this.selectedImages().forEach((img, index) => {
       images.push({ type: 'new', preview: img.preview, index });
     });
