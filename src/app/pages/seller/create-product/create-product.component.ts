@@ -238,7 +238,7 @@ export class CreateProductComponent {
         formData.append('images', file);
       });
 
-      this.http.post<{ imageUrls: string[] }>(`${this.apiUrl}/upload`, formData).subscribe({
+      this.http.post<{ imageUrls: string[] }>(`${this.apiUrl}/upload/products`, formData).subscribe({
         next: (response) => {
           resolve(response.imageUrls);
         },

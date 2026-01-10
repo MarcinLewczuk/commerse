@@ -4,6 +4,9 @@
 /backend/private/bizsuite_ssh_priv.key
 /backend/private/bizsuite_ssh.pub
 
+# Bulk images
+public/images/products/
+public/images/services/
 
 # Auth0 env 
 src/environments/environment.ts

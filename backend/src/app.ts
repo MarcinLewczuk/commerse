@@ -27,14 +27,20 @@ server.use(cors());
 server.use('/images', express.static(path.resolve(__dirname, '../../public/images')));
 
 // Configure multer for image uploads
-const uploadsDir = path.resolve(__dirname, '../../public/images/products');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+const productsUploadDir = path.resolve(__dirname, '../../public/images/products');
+const servicesUploadDir = path.resolve(__dirname, '../../public/images/services');
+
+if (!fs.existsSync(productsUploadDir)) {
+  fs.mkdirSync(productsUploadDir, { recursive: true });
+}
+if (!fs.existsSync(servicesUploadDir)) {
+  fs.mkdirSync(servicesUploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
+// Storage configuration for products
+const productStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+    cb(null, productsUploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -42,8 +48,31 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({
-  storage,
+// Storage configuration for services
+const serviceStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, servicesUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'service-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadProduct = multer({
+  storage: productStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+});
+
+const uploadService = multer({
+  storage: serviceStorage,
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -256,14 +285,319 @@ server.delete('/products/:id', deleteProduct());
 // Create a new product
 server.post('/products', createProduct());
 
+// --- SERVICES ROUTES ---
+// Get all services
+server.get('/services', (req: Request, res: Response) => {
+  db.query(
+    `SELECT s.id, s.shop_id, s.name, s.description, s.price, s.duration_minutes, s.service_code,
+            GROUP_CONCAT(si.image_url ORDER BY si.display_order) as image_urls,
+            s.created_at, s.updated_at
+     FROM services s
+     LEFT JOIN service_images si ON s.id = si.service_id
+     GROUP BY s.id
+     ORDER BY s.created_at DESC`,
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error('GET all services failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      const apiUrl = `http://localhost:${process.env['PORT']}`;
+      const servicesWithImages = results.map((s: any) => ({
+        ...s,
+        image_urls: s.image_urls 
+          ? s.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+          : []
+      }));
+      return res.json(servicesWithImages);
+    }
+  );
+});
+
+// Get service by ID
+server.get('/services/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ error: 'Service ID required' });
+  }
+  db.query(
+    `SELECT s.id, s.shop_id, s.name, s.description, s.price, s.duration_minutes, s.service_code,
+            GROUP_CONCAT(si.image_url ORDER BY si.display_order) as image_urls,
+            s.created_at, s.updated_at
+     FROM services s
+     LEFT JOIN service_images si ON s.id = si.service_id
+     WHERE s.id = ?
+     GROUP BY s.id`,
+    [id],
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error(`GET service by id failed:`, error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      if (results.length === 0) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+      const apiUrl = `http://localhost:${process.env['PORT']}`;
+      const service = {
+        ...results[0],
+        image_urls: results[0].image_urls 
+          ? results[0].image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+          : []
+      };
+      return res.json(service);
+    }
+  );
+});
+
+// Get service by slug
+server.get('/services/slug/:slug', (req: Request, res: Response) => {
+  const { slug } = req.params;
+  if (!slug) {
+    return res.status(400).json({ error: 'Service slug required' });
+  }
+  db.query(
+    `SELECT s.id, s.shop_id, s.name, s.description, s.price, s.duration_minutes, s.service_code,
+            GROUP_CONCAT(si.image_url ORDER BY si.display_order) as image_urls,
+            s.created_at, s.updated_at
+     FROM services s
+     LEFT JOIN service_images si ON s.id = si.service_id
+     GROUP BY s.id`,
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error('Services slug fetch failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      const apiUrl = `http://localhost:${process.env['PORT']}`;
+      const service = results.find((s: any) => slugify(s.name) === slug);
+      if (!service) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+      const serviceWithImages = {
+        ...service,
+        image_urls: service.image_urls 
+          ? service.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+          : []
+      };
+      return res.json(serviceWithImages);
+    }
+  );
+});
+
+// Get services by shop ID
+server.get('/services/shop/:shopId', (req: Request, res: Response) => {
+  const { shopId } = req.params;
+  if (!shopId) {
+    return res.status(400).json({ error: 'shopId required' });
+  }
+  db.query(
+    `SELECT s.id, s.shop_id, s.name, s.description, s.price, s.duration_minutes, s.service_code,
+            GROUP_CONCAT(si.image_url ORDER BY si.display_order) as image_urls,
+            s.created_at, s.updated_at
+     FROM services s
+     LEFT JOIN service_images si ON s.id = si.service_id
+     WHERE s.shop_id = ?
+     GROUP BY s.id
+     ORDER BY s.created_at DESC`,
+    [shopId],
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error('Services fetch by shop failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      const apiUrl = `http://localhost:${process.env['PORT']}`;
+      const servicesWithImages = results.map((s: any) => ({
+        ...s,
+        image_urls: s.image_urls 
+          ? s.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
+          : []
+      }));
+      return res.json(servicesWithImages);
+    }
+  );
+});
+
+// Create a new service
+server.post('/services', (req: Request, res: Response) => {
+  const { shop_id, name, description, price, duration_minutes, service_code, imageUrls } = req.body;
+  
+  console.log('Creating service with data:', { shop_id, name, description, price, duration_minutes, service_code, imageUrls });
+  
+  if (!shop_id || !name || !price) {
+    return res.status(400).json({ error: 'shop_id, name, and price are required' });
+  }
+
+  db.query(
+    'INSERT INTO services (shop_id, name, description, price, duration_minutes, service_code) VALUES (?, ?, ?, ?, ?, ?)',
+    [shop_id, name, description || null, price, duration_minutes || null, service_code || null],
+    (error: mysql.QueryError | null, result: any) => {
+      if (error) {
+        console.error('Create service failed:', error);
+        console.error('Error details:', {
+          code: error.code,
+          errno: error.errno,
+          message: error.message
+        });
+        return res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
+      
+      const serviceId = result.insertId;
+      
+      // Insert service images if provided
+      if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {
+        const imageValues = imageUrls.map((url: string, index: number) => [serviceId, url, index]);
+        db.query(
+          'INSERT INTO service_images (service_id, image_url, display_order) VALUES ?',
+          [imageValues],
+          (imgError: mysql.QueryError | null) => {
+            if (imgError) {
+              console.error('Insert service images failed:', imgError);
+            }
+          }
+        );
+      }
+      
+      return res.status(201).json({ id: serviceId, message: 'Service created successfully' });
+    }
+  );
+});
+
+// Update a service
+server.put('/services/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, description, price, duration_minutes } = req.body;
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Service ID required' });
+  }
+
+  const updates: string[] = [];
+  const values: any[] = [];
+  
+  if (name !== undefined) {
+    updates.push('name = ?');
+    values.push(name);
+  }
+  if (description !== undefined) {
+    updates.push('description = ?');
+    values.push(description);
+  }
+  if (price !== undefined) {
+    updates.push('price = ?');
+    values.push(price);
+  }
+  if (duration_minutes !== undefined) {
+    updates.push('duration_minutes = ?');
+    values.push(duration_minutes);
+  }
+  
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'No fields to update' });
+  }
+  
+  values.push(id);
+  
+  db.query(
+    `UPDATE services SET ${updates.join(', ')} WHERE id = ?`,
+    values,
+    (error: mysql.QueryError | null) => {
+      if (error) {
+        console.error('Update service failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      return res.json({ message: 'Service updated successfully' });
+    }
+  );
+});
+
+// Update service images
+server.put('/services/:id/images', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { imageUrls } = req.body;
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Service ID required' });
+  }
+  
+  if (!Array.isArray(imageUrls)) {
+    return res.status(400).json({ error: 'imageUrls must be an array' });
+  }
+  
+  // Delete existing images
+  db.query('DELETE FROM service_images WHERE service_id = ?', [id], (delError: mysql.QueryError | null) => {
+    if (delError) {
+      console.error('Delete service images failed:', delError);
+      return res.status(500).json({ error: 'Failed to delete old images' });
+    }
+    
+    // Insert new images
+    if (imageUrls.length > 0) {
+      const imageValues = imageUrls.map((url: string, index: number) => {
+        const cleanUrl = url.replace(/^https?:\/\/[^\/]+/, '');
+        return [id, cleanUrl, index];
+      });
+      
+      db.query(
+        'INSERT INTO service_images (service_id, image_url, display_order) VALUES ?',
+        [imageValues],
+        (imgError: mysql.QueryError | null) => {
+          if (imgError) {
+            console.error('Insert service images failed:', imgError);
+            return res.status(500).json({ error: 'Failed to insert new images' });
+          }
+          return res.json({ message: 'Service images updated successfully' });
+        }
+      );
+    } else {
+      return res.json({ message: 'Service images cleared' });
+    }
+  });
+});
+
+// Delete a service
+server.delete('/services/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Service ID required' });
+  }
+  
+  db.query('DELETE FROM services WHERE id = ?', [id], (error: mysql.QueryError | null, result: any) => {
+    if (error) {
+      console.error('Delete service failed:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    
+    return res.json({ message: 'Service deleted successfully' });
+  });
+});
+
 // Upload product images
-server.post('/upload', upload.array('images', 10), (req: Request, res: Response) => {
+server.post('/upload/products', uploadProduct.array('images', 10), (req: Request, res: Response) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'No images uploaded' });
   }
 
   const imageUrls = (req.files as Express.Multer.File[]).map(file => {
     return `/images/products/${file.filename}`;
+  });
+
+  return res.status(200).json({
+    message: 'Images uploaded successfully',
+    imageUrls
+  });
+});
+
+// Upload service images
+server.post('/upload/services', uploadService.array('images', 10), (req: Request, res: Response) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'No images uploaded' });
+  }
+
+  const imageUrls = (req.files as Express.Multer.File[]).map(file => {
+    return `/images/services/${file.filename}`;
   });
 
   return res.status(200).json({

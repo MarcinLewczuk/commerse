@@ -5,8 +5,10 @@ import { HttpClient } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ShopService } from '../../services/shop.service';
 import { ProductsService } from '../../services/products.service';
+import { ServicesService } from '../../services/services.service';
 import { Observable, switchMap } from 'rxjs';
 import { Product } from '../../models/product';
+import { Service } from '../../models/service';
 
 @Component({
   selector: 'app-seller-dashboard',
@@ -17,16 +19,22 @@ import { Product } from '../../models/product';
 export class SellerDashboardComponent implements OnInit {
   private shopService = inject(ShopService);
   private productsService = inject(ProductsService);
+  private servicesService = inject(ServicesService);
   private http = inject(HttpClient);
   private snackBar = inject(MatSnackBar);
   private readonly apiUrl = 'http://localhost:3000';
 
   shop$!: Observable<any>;
   products$!: Observable<Product[]>;
+  services$!: Observable<Service[]>;
+
+  // Tab management
+  activeTab = signal<'products' | 'services'>('products');
 
   // Delete state management
   deleting = signal<number | null>(null);
   deletedProducts = new Map<number, { product: Product; undoTimeout: ReturnType<typeof setTimeout> }>();
+  deletedServices = new Map<number, { service: Service; undoTimeout: ReturnType<typeof setTimeout> }>();
 
   ngOnInit() {
     this.shop$ = this.shopService.getShopInfo();
@@ -40,6 +48,20 @@ export class SellerDashboardComponent implements OnInit {
         return this.productsService.getByShopId(shop.id);
       })
     );
+
+    // Fetch services by getting shop info first, then fetching services for that shop
+    this.services$ = this.shop$.pipe(
+      switchMap(shop => {
+        if (!shop?.id) {
+          return new Observable<Service[]>(obs => obs.next([]));
+        }
+        return this.servicesService.getByShopId(shop.id);
+      })
+    );
+  }
+
+  setActiveTab(tab: 'products' | 'services') {
+    this.activeTab.set(tab);
   }
 
   openDeleteConfirmation(product: Product) {
@@ -154,6 +176,90 @@ export class SellerDashboardComponent implements OnInit {
     );
   }
 
+  reloadServices() {
+    this.shop$ = this.shopService.getShopInfo();
+    this.services$ = this.shop$.pipe(
+      switchMap(shop => {
+        if (!shop?.id) {
+          return new Observable<Service[]>(obs => obs.next([]));
+        }
+        return this.servicesService.getByShopId(shop.id);
+      })
+    );
+  }
+
+  deleteService(service: Service) {
+    this.deleting.set(service.id!);
+
+    this.http.delete<any>(`${this.apiUrl}/services/${service.id}`).subscribe({
+      next: (response) => {
+        this.deleting.set(null);
+
+        let undoTimeout: ReturnType<typeof setTimeout>;
+
+        const snackBarRef = this.snackBar.open(
+          `✓ Service "${service.name}" deleted`,
+          'Undo',
+          {
+            duration: 5000,
+            panelClass: ['success-snackbar']
+          }
+        );
+
+        undoTimeout = setTimeout(() => {
+          this.deletedServices.delete(service.id!);
+        }, 5000);
+
+        this.deletedServices.set(service.id!, { service, undoTimeout });
+
+        snackBarRef.onAction().subscribe(() => {
+          this.undoServiceDelete(service);
+        });
+
+        setTimeout(() => {
+          this.reloadServices();
+        }, 100);
+      },
+      error: (err) => {
+        this.deleting.set(null);
+        console.error('Failed to delete service', err);
+        const errorMessage = err?.error?.error || 'Failed to delete service';
+        this.snackBar.open(errorMessage, 'Close', { 
+          duration: 5000, 
+          panelClass: ['error-snackbar'] 
+        });
+      }
+    });
+  }
+
+  undoServiceDelete(service: Service) {
+    const deletedData = this.deletedServices.get(service.id!);
+    if (!deletedData) {
+      this.snackBar.open('Undo window has closed', 'Close', { duration: 3000 });
+      return;
+    }
+
+    clearTimeout(deletedData.undoTimeout);
+
+    this.http.post<any>(`${this.apiUrl}/services`, deletedData.service).subscribe({
+      next: () => {
+        this.deletedServices.delete(service.id!);
+        this.snackBar.open('✓ Service restored successfully!', 'Close', { 
+          duration: 3000, 
+          panelClass: ['success-snackbar'] 
+        });
+        this.reloadServices();
+      },
+      error: (err) => {
+        console.error('Failed to restore service', err);
+        this.snackBar.open('Failed to restore service', 'Close', { 
+          duration: 5000, 
+          panelClass: ['error-snackbar'] 
+        });
+      }
+    });
+  }
+
   getFirstImage(product: Product): string | null {
     if (!product.image_urls) {
       return null;
@@ -167,6 +273,25 @@ export class SellerDashboardComponent implements OnInit {
           : [product.image_urls];
       } else {
         images = Array.isArray(product.image_urls) ? product.image_urls : [];
+      }
+      return images.length > 0 ? images[0] : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  getFirstServiceImage(service: Service): string | null {
+    if (!service.image_urls) {
+      return null;
+    }
+    try {
+      let images: string[];
+      if (typeof service.image_urls === 'string') {
+        images = service.image_urls.includes(',') 
+          ? service.image_urls.split(',')
+          : [service.image_urls];
+      } else {
+        images = Array.isArray(service.image_urls) ? service.image_urls : [];
       }
       return images.length > 0 ? images[0] : null;
     } catch (e) {

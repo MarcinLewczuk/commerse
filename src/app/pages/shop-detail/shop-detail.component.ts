@@ -2,6 +2,7 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Service, slugify as slugifyService } from '../../models/service';
 
 export interface Product {
   id: number;
@@ -34,8 +35,11 @@ export class ShopDetailComponent implements OnInit {
   private readonly apiUrl = 'http://localhost:3000';
 
   shop = signal<ShopDetail | null>(null);
+  services = signal<Service[]>([]);
   loading = signal<boolean>(true);
+  loadingServices = signal<boolean>(true);
   error = signal<string | null>(null);
+  activeTab = signal<'products' | 'services'>('products');
 
   ngOnInit() {
     const shopId = this.route.snapshot.paramMap.get('id');
@@ -45,6 +49,7 @@ export class ShopDetailComponent implements OnInit {
       return;
     }
     this.fetchShopDetail(shopId);
+    this.fetchServices(shopId);
   }
 
   fetchShopDetail(shopId: string) {
@@ -66,6 +71,24 @@ export class ShopDetailComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  fetchServices(shopId: string) {
+    this.loadingServices.set(true);
+    this.http.get<Service[]>(`${this.apiUrl}/services/shop/${shopId}`).subscribe({
+      next: (data) => {
+        this.services.set(data);
+        this.loadingServices.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load services', err);
+        this.loadingServices.set(false);
+      }
+    });
+  }
+
+  setActiveTab(tab: 'products' | 'services') {
+    this.activeTab.set(tab);
   }
 
   displayPrice(price: number): string {
@@ -107,6 +130,25 @@ export class ShopDetailComponent implements OnInit {
       return [];
     }
   }
+
+  getServiceImage(service: Service): string | null {
+    if (!service.image_urls) return null;
+    try {
+      let images: string[];
+      if (typeof service.image_urls === 'string') {
+        images = service.image_urls.includes(',') 
+          ? service.image_urls.split(',')
+          : [service.image_urls];
+      } else {
+        images = Array.isArray(service.image_urls) ? service.image_urls : [];
+      }
+      return images.length > 0 ? images[0] : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  slugifyService = slugifyService;
 
   goBack() {
     this.router.navigate(['/shops']);

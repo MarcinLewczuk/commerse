@@ -159,7 +159,9 @@ export class ProfileComponent {
   private shopService = inject(ShopService);
   private userService = inject(UserService);
 
+  // Use the centralized user info observable from ShopService
   userInfo$ = this.shopService.getUserInfo();
+  
   showShopForm = signal(false);
   isCreatingShop = signal(false);
   shopError = signal<string | null>(null);
@@ -189,8 +191,9 @@ export class ProfileComponent {
         this.isCreatingShop.set(false);
         this.showShopForm.set(false);
         this.shopName = '';
-        // Refresh user info
-        this.userInfo$ = this.shopService.getUserInfo();
+        
+        // Trigger refresh of user info across all components
+        this.shopService.refreshUserInfo();
       },
       error: (error) => {
         this.isCreatingShop.set(false);
