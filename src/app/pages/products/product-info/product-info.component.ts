@@ -6,6 +6,8 @@ import { HttpClient } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
 import { Location } from '@angular/common';
 import { Product } from '../../../models/product';
+import { BasketService } from '../../../services/basket.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-product-info',
@@ -18,6 +20,8 @@ export class ProductInfoComponent implements OnInit {
   private http = inject(HttpClient);
   private title = inject(Title);
   private location = inject(Location);
+  private basketService = inject(BasketService);
+  private snackBar = inject(MatSnackBar);
 
   product = signal<Product | null>(null);
   loading = signal<boolean>(true);
@@ -134,6 +138,25 @@ export class ProductInfoComponent implements OnInit {
 
   goBack() {
     this.location.back();
+  }
+
+  addToBasket() {
+    const currentProduct = this.product();
+    if (currentProduct) {
+      this.basketService.addItem('product', currentProduct, 1);
+      this.snackBar.open('✓ Product added to basket!', 'View Basket', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'bottom'
+      }).onAction().subscribe(() => {
+        window.location.href = '/basket';
+      });
+    }
+  }
+
+  isInBasket(): boolean {
+    const currentProduct = this.product();
+    return currentProduct ? this.basketService.isInBasket('product', currentProduct.id) : false;
   }
 }
 

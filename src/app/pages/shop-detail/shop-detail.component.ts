@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Service, slugify as slugifyService } from '../../models/service';
+import { slugify as productSlugify } from '../../models/product';
+import { BasketService } from '../../services/basket.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface Product {
   id: number;
@@ -32,6 +35,8 @@ export class ShopDetailComponent implements OnInit {
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private basketService = inject(BasketService);
+  private snackBar = inject(MatSnackBar);
   private readonly apiUrl = 'http://localhost:3000';
 
   shop = signal<ShopDetail | null>(null);
@@ -149,6 +154,51 @@ export class ShopDetailComponent implements OnInit {
   }
 
   slugifyService = slugifyService;
+
+  slugifyProduct(productName: string): string {
+    return productSlugify(productName);
+  }
+
+  addProductToBasket(event: Event, product: Product) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (!product.stock_quantity || product.stock_quantity === 0) {
+      this.snackBar.open('This product is out of stock', 'Close', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'bottom'
+      });
+      return;
+    }
+
+    this.basketService.addItem('product', product, 1);
+    this.snackBar.open('✓ Product added to basket!', 'View Basket', {
+      duration: 3000,
+      horizontalPosition: 'end',
+      verticalPosition: 'bottom'
+    }).onAction().subscribe(() => {
+      this.router.navigate(['/basket']);
+    });
+  }
+
+  addServiceToBasket(event: Event, service: Service) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    this.basketService.addItem('service', service, 1);
+    this.snackBar.open('✓ Service added to basket!', 'View Basket', {
+      duration: 3000,
+      horizontalPosition: 'end',
+      verticalPosition: 'bottom'
+    }).onAction().subscribe(() => {
+      this.router.navigate(['/basket']);
+    });
+  }
+
+  navigateToProduct(productName: string) {
+    this.router.navigate(['/products', this.slugifyProduct(productName)]);
+  }
 
   goBack() {
     this.router.navigate(['/shops']);

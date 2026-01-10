@@ -1,0 +1,145 @@
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+	<div class="mb-8">
+		<h1 class="text-3xl font-bold text-gray-900">Shopping Basket</h1>
+		<p class="text-gray-600 mt-2">Review your items before checkout</p>
+	</div>
+
+	@if (items().length === 0) {
+		<!-- Empty basket state -->
+		<div class="bg-white border border-gray-200 rounded-lg shadow-sm p-12 text-center">
+			<div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+				<svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+				</svg>
+			</div>
+			<h2 class="text-xl font-semibold text-gray-900 mb-2">Your basket is empty</h2>
+			<p class="text-gray-600 mb-6">Start shopping to add items to your basket</p>
+			<div class="flex gap-4 justify-center">
+				<a [routerLink]="['/products']" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">
+					Browse Products
+				</a>
+				<a [routerLink]="['/services']" class="px-6 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-md">
+					Browse Services
+				</a>
+			</div>
+		</div>
+	} @else {
+		<!-- Basket with items -->
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+			<!-- Items list -->
+			<div class="lg:col-span-2 space-y-4">
+				@for (basketItem of items(); track basketItem.item.id + basketItem.type) {
+					<div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+						<div class="flex gap-4">
+							<!-- Image -->
+							<a [routerLink]="getItemLink(basketItem.item, basketItem.type)" class="flex-shrink-0">
+								<img
+									[src]="getFirstImage(basketItem.item.image_urls)"
+									[alt]="basketItem.item.name"
+									class="w-24 h-24 object-cover rounded-md"
+								/>
+							</a>
+
+							<!-- Details -->
+							<div class="flex-grow">
+								<div class="flex justify-between items-start mb-2">
+									<div>
+										<span class="inline-block px-2 py-0.5 text-xs font-medium rounded-full mb-1"
+											[class.bg-blue-100]="basketItem.type === 'product'"
+											[class.text-blue-700]="basketItem.type === 'product'"
+											[class.bg-green-100]="basketItem.type === 'service'"
+											[class.text-green-700]="basketItem.type === 'service'">
+											{{ basketItem.type === 'product' ? 'Product' : 'Service' }}
+										</span>
+										<h3 class="font-semibold text-gray-900">
+											<a [routerLink]="getItemLink(basketItem.item, basketItem.type)" class="hover:text-indigo-600">
+												{{ basketItem.item.name }}
+											</a>
+										</h3>
+										<p class="text-sm text-gray-600">{{ displayPrice(basketItem.item.price) }} each</p>
+									</div>
+									<button
+										(click)="removeItem(basketItem.type, basketItem.item.id)"
+										class="text-red-600 hover:text-red-700 p-1"
+										title="Remove from basket"
+									>
+										<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+										</svg>
+									</button>
+								</div>
+
+								<!-- Quantity controls -->
+								<div class="flex items-center gap-4 mt-3">
+									<div class="flex items-center border border-gray-300 rounded-md">
+										<button
+											(click)="decreaseQuantity(basketItem.type, basketItem.item.id)"
+											class="px-3 py-1 hover:bg-gray-100 text-gray-600"
+											[disabled]="basketItem.quantity <= 1"
+										>
+											−
+										</button>
+										<span class="px-4 py-1 border-x border-gray-300 min-w-[3rem] text-center">{{ basketItem.quantity }}</span>
+										<button
+											(click)="increaseQuantity(basketItem.type, basketItem.item.id)"
+											class="px-3 py-1 hover:bg-gray-100 text-gray-600"
+										>
+											+
+										</button>
+									</div>
+									<span class="font-semibold text-gray-900">
+										{{ displayItemTotal(basketItem.item.price, basketItem.quantity) }}
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				}
+
+				<!-- Clear basket button -->
+				<button
+					(click)="clearBasket()"
+					class="w-full px-4 py-2 text-red-600 hover:text-red-700 border border-red-300 hover:border-red-400 rounded-md"
+				>
+					Clear Basket
+				</button>
+			</div>
+
+			<!-- Summary sidebar -->
+			<div class="lg:col-span-1">
+				<div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 sticky top-4">
+					<h2 class="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+					
+					<div class="space-y-3 mb-6">
+						<div class="flex justify-between text-gray-600">
+							<span>Items ({{ itemCount() }})</span>
+							<span>{{ displayPrice(totalPrice()) }}</span>
+						</div>
+						<div class="flex justify-between text-gray-600">
+							<span>Shipping</span>
+							<span class="text-green-600">FREE</span>
+						</div>
+						<div class="border-t border-gray-200 pt-3 flex justify-between text-lg font-semibold text-gray-900">
+							<span>Total</span>
+							<span>{{ displayPrice(totalPrice()) }}</span>
+						</div>
+					</div>
+
+					<button
+						(click)="onBuyNow()"
+						class="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md mb-3"
+					>
+						Buy Now
+					</button>
+
+					<a
+						[routerLink]="['/products']"
+						class="block w-full px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 text-center border border-gray-300 rounded-md"
+					>
+						Continue Shopping
+					</a>
+				</div>
+			</div>
+		</div>
+	}
+</main>

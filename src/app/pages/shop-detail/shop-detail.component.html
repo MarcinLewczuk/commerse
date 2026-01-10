@@ -64,12 +64,15 @@
 						@for (product of shop()!.products; track product.id) {
 							<div class="border border-gray-200 rounded-lg p-4 flex flex-col hover:shadow-md transition">
 								<!-- Product Image (Main Only) -->
-								<div class="aspect-square w-full rounded-md overflow-hidden bg-gray-100 flex items-center justify-center mb-3">
+								<div 
+									class="aspect-square w-full rounded-md overflow-hidden bg-gray-100 flex items-center justify-center mb-3 cursor-pointer"
+									(click)="navigateToProduct(product.name)"
+								>
 									@if (getAllProductImages(product.image_urls).length > 0) {
 										<img 
 											[src]="getAllProductImages(product.image_urls)[0]" 
 											[alt]="product.name"
-											class="h-full w-full object-cover hover:scale-105 transition-transform cursor-pointer"
+											class="h-full w-full object-cover hover:scale-105 transition-transform"
 										/>
 									} @else {
 										<span class="text-gray-400 text-xs">No Image</span>
@@ -94,7 +97,10 @@
 								
 								<div class="mt-4 flex items-center justify-between">
 									<span class="text-lg font-semibold text-purple-600">{{ displayPrice(product.price) }}</span>
-									<button class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-md transition cursor-pointer">
+									<button 
+										(click)="addProductToBasket($event, product)"
+										[disabled]="!product.stock_quantity || product.stock_quantity === 0"
+										class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white text-sm rounded-md transition cursor-pointer">
 										Add to Cart
 									</button>
 								</div>
@@ -125,10 +131,12 @@
 				} @else if (services().length > 0) {
 					<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						@for (service of services(); track service.id) {
-							<a [routerLink]="['/services', slugifyService(service.name)]"
-							   class="border border-gray-200 rounded-lg p-4 flex flex-col hover:shadow-md transition cursor-pointer">
+							<div class="border border-gray-200 rounded-lg p-4 flex flex-col hover:shadow-md transition">
 								<!-- Service Image -->
-								<div class="aspect-square w-full rounded-md overflow-hidden bg-gray-100 flex items-center justify-center mb-3">
+								<a 
+									[routerLink]="['/services', slugifyService(service.name)]"
+									class="aspect-square w-full rounded-md overflow-hidden bg-gray-100 flex items-center justify-center mb-3 cursor-pointer"
+								>
 									@if (getServiceImage(service)) {
 										<img 
 											[src]="getServiceImage(service)" 
@@ -140,7 +148,7 @@
 											<path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/>
 										</svg>
 									}
-								</div>
+								</a>
 
 								<h3 class="font-medium text-gray-900 line-clamp-2 mb-2">{{ service.name }}</h3>
 								
@@ -149,12 +157,19 @@
 								}
 								
 								<div class="mt-auto pt-4 flex items-center justify-between">
-									<span class="text-lg font-semibold text-blue-600">${{ service.price }}</span>
-									@if (service.duration_minutes) {
-										<span class="text-sm text-gray-600">{{ service.duration_minutes }} min</span>
-									}
+									<div class="flex flex-col">
+										<span class="text-lg font-semibold text-blue-600">${{ service.price }}</span>
+										@if (service.duration_minutes) {
+											<span class="text-xs text-gray-600">{{ service.duration_minutes }} min</span>
+										}
+									</div>
+									<button 
+										(click)="addServiceToBasket($event, service)"
+										class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition cursor-pointer">
+										Add to Cart
+									</button>
 								</div>
-							</a>
+							</div>
 						}
 					</div>
 				} @else {
