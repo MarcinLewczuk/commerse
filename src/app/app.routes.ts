@@ -6,6 +6,7 @@ import { ProductsComponent } from './pages/products/products.component';
 import { ProductInfoComponent } from './pages/products/product-info/product-info.component';
 import { ServicesComponent } from './pages/services/services.component';
 import { ServiceInfoComponent } from './pages/services/service-info/service-info.component';
+import { BasketComponent } from './pages/basket/basket.component';
 import { AiAssistantComponent } from './pages/ai-assistant/ai-assistant.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { SellerDashboardComponent } from './pages/seller/seller-dashboard.component';
@@ -49,6 +50,11 @@ export const routes: Routes = [
         path: 'services/:slug',
         component: ServiceInfoComponent,
         title: 'Service'
+    },
+    {
+        path: 'basket',
+        component: BasketComponent,
+        title: 'Shopping Basket'
     },
     {
         path: 'ai-assistant',

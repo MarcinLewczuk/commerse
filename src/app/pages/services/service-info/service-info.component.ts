@@ -3,6 +3,8 @@ import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Service } from '../../../models/service';
 import { ServicesService } from '../../../services/services.service';
+import { BasketService } from '../../../services/basket.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-service-info',
@@ -14,6 +16,8 @@ export class ServiceInfoComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private servicesService = inject(ServicesService);
   private location = inject(Location);
+  private basketService = inject(BasketService);
+  private snackBar = inject(MatSnackBar);
 
   service = signal<Service | null>(null);
   loading = signal<boolean>(true);
@@ -95,5 +99,24 @@ export class ServiceInfoComponent implements OnInit {
 
   goBack() {
     this.location.back();
+  }
+
+  addToBasket() {
+    const currentService = this.service();
+    if (currentService) {
+      this.basketService.addItem('service', currentService, 1);
+      this.snackBar.open('✓ Service added to basket!', 'View Basket', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'bottom'
+      }).onAction().subscribe(() => {
+        window.location.href = '/basket';
+      });
+    }
+  }
+
+  isInBasket(): boolean {
+    const currentService = this.service();
+    return currentService ? this.basketService.isInBasket('service', currentService.id) : false;
   }
 }
