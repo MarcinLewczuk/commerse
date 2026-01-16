@@ -106,7 +106,12 @@
 
 	<!-- Services Tab -->
 	@if (activeTab() === 'services') {
-		<div class="mb-6 flex justify-end">
+		<div class="mb-6 flex justify-between items-center">
+			<a 
+				routerLink="/seller/services/calendar"
+				class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition cursor-pointer inline-block">
+				📅 View Calendar
+			</a>
 			<a 
 				routerLink="/seller/services/create"
 				class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition cursor-pointer inline-block">

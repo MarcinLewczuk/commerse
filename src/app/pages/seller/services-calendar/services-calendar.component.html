@@ -1,0 +1,430 @@
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Services Calendar</h1>
+        <p class="text-gray-600">Manage your service bookings</p>
+      </div>
+      <a 
+        routerLink="/seller/dashboard"
+        class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition">
+        ← Back to Dashboard
+      </a>
+    </div>
+
+    <!-- View Toggle and Filter Controls -->
+    <div class="flex flex-wrap gap-4 items-center justify-between mb-6">
+      <!-- View Mode Toggle -->
+      <div class="flex gap-2 bg-gray-100 rounded-lg p-1">
+        <button
+          (click)="setViewMode('month')"
+          [class.bg-white]="viewMode() === 'month'"
+          [class.shadow-sm]="viewMode() === 'month'"
+          class="px-4 py-2 rounded-md font-medium transition">
+          Calendar View
+        </button>
+        <button
+          (click)="setViewMode('list')"
+          [class.bg-white]="viewMode() === 'list'"
+          [class.shadow-sm]="viewMode() === 'list'"
+          class="px-4 py-2 rounded-md font-medium transition">
+          List View
+        </button>
+      </div>
+
+      <div class="flex gap-3 items-center flex-wrap">
+        <!-- Search Bar (only in list view) -->
+        @if (viewMode() === 'list') {
+          <input
+            type="text"
+            placeholder="Search bookings..."
+            (input)="setSearchQuery($any($event.target).value)"
+            [value]="searchQuery()"
+            class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[250px]">
+        }
+
+        <!-- Date Picker (only in list view) -->
+        @if (viewMode() === 'list') {
+          <div class="flex gap-2 items-center">
+            <span class="text-sm font-medium text-gray-700">Date:</span>
+            <input
+              type="date"
+              (change)="setSelectedDate($any($event.target).value)"
+              [value]="selectedDate()"
+              class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            @if (selectedDate()) {
+              <button
+                (click)="setSelectedDate('')"
+                title="Clear date filter"
+                class="px-2 py-2 text-gray-600 hover:text-gray-900 transition">
+                ✕
+              </button>
+            }
+          </div>
+        }
+        
+        <!-- Status Filter -->
+        <div class="flex gap-2 items-center">
+          <span class="text-sm font-medium text-gray-700">Status:</span>
+          <select
+            (change)="setStatusFilter($any($event.target).value)"
+            [value]="statusFilter()"
+            class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="text-center py-12">
+      <p class="text-gray-600">Loading bookings...</p>
+    </div>
+  } @else {
+    <!-- Month Calendar View -->
+    @if (viewMode() === 'month') {
+      <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+        <!-- Calendar Header -->
+        <div class="flex items-center justify-between mb-6">
+          <button
+            (click)="previousMonth()"
+            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition">
+            ← Previous
+          </button>
+          
+          <div class="flex items-center gap-4">
+            <h2 class="text-xl font-bold text-gray-900">{{ getMonthYear() }}</h2>
+            <button
+              (click)="goToToday()"
+              class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition">
+              Today
+            </button>
+          </div>
+          
+          <button
+            (click)="nextMonth()"
+            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition">
+            Next →
+          </button>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="grid grid-cols-7 gap-2">
+          <!-- Day Headers -->
+          @for (day of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; track day) {
+            <div class="text-center font-semibold text-gray-700 py-2">
+              {{ day }}
+            </div>
+          }
+
+          <!-- Calendar Days -->
+          @for (day of calendarDays(); track day.dateString) {
+            <div
+              [class.bg-blue-50]="day.isToday"
+              [class.border-blue-500]="day.isToday"
+              [class.border-2]="day.isToday"
+              [class.opacity-40]="!day.isCurrentMonth"
+              class="min-h-[100px] border border-gray-200 rounded-lg p-2 hover:bg-gray-50 transition cursor-pointer">
+              <div class="font-medium text-sm mb-1" [class.text-blue-600]="day.isToday">
+                {{ day.date.getDate() }}
+              </div>
+              
+              @if (getDayBookingCount(day) > 0) {
+                <div class="space-y-1">
+                  @for (booking of getFilteredDayBookings(day).slice(0, 2); track booking.id) {
+                    <div
+                      (click)="selectBooking(booking)"
+                      [class]="getStatusClass(booking.status)"
+                      class="text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition truncate">
+                      {{ formatTime(booking.start_time) }} - {{ booking.service_name }}
+                    </div>
+                  }
+                  @if (getDayBookingCount(day) > 2) {
+                    <div class="text-xs text-gray-500 px-2">
+                      +{{ getDayBookingCount(day) - 2 }} more
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- List View -->
+    @if (viewMode() === 'list') {
+      <div class="space-y-4">
+        @if (getFilteredBookings().length === 0) {
+          <div class="bg-white border border-gray-200 rounded-lg p-8 text-center">
+            <p class="text-gray-600">
+              @if (searchQuery() || statusFilter() !== 'all' || selectedDate()) {
+                No bookings match your search criteria.
+              } @else {
+                No bookings found.
+              }
+            </p>
+            @if (searchQuery() || statusFilter() !== 'all' || selectedDate()) {
+              <button
+                (click)="setSearchQuery(''); setStatusFilter('all'); setSelectedDate('')"
+                class="mt-3 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition">
+                Clear filters
+              </button>
+            }
+          </div>
+        } @else {
+          @for (booking of getFilteredBookings(); track booking.id) {
+            <div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center gap-3 mb-2">
+                    <h3 class="text-lg font-semibold text-gray-900">{{ booking.service_name }}</h3>
+                    <span [class]="getStatusClass(booking.status)" class="text-xs px-2 py-1 rounded font-medium">
+                      {{ booking.status }}
+                    </span>
+                  </div>
+                  
+                  <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div>
+                      <p><strong>Date:</strong> {{ formatDate(booking.booking_date) }}</p>
+                      <p><strong>Time:</strong> {{ formatTime(booking.start_time) }}
+                        @if (booking.end_time) {
+                          - {{ formatTime(booking.end_time) }}
+                        }
+                      </p>
+                      @if (booking.duration_minutes) {
+                        <p><strong>Duration:</strong> {{ booking.duration_minutes }} minutes</p>
+                      }
+                    </div>
+                    <div>
+                      @if (booking.customer_name) {
+                        <p><strong>Customer:</strong> {{ booking.customer_name }}</p>
+                      }
+                      @if (booking.customer_email) {
+                        <p><strong>Email:</strong> {{ booking.customer_email }}</p>
+                      }
+                      @if (booking.price) {
+                        <p><strong>Price:</strong> ${{ booking.price }}</p>
+                      }
+                    </div>
+                  </div>
+
+                  @if (booking.notes) {
+                    <div class="mt-3">
+                      <p class="text-sm text-gray-700"><strong>Notes:</strong> {{ booking.notes }}</p>
+                    </div>
+                  }
+                </div>
+
+                <!-- Status Actions -->
+                <div class="ml-4 flex flex-col gap-2">
+                  @if (booking.status === 'pending') {
+                    <button
+                      (click)="updateBookingStatus(booking, 'confirmed')"
+                      class="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white rounded transition">
+                      Confirm
+                    </button>
+                    <button
+                      (click)="updateBookingStatus(booking, 'cancelled')"
+                      class="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition">
+                      Cancel
+                    </button>
+                  }
+                  @if (booking.status === 'confirmed') {
+                    <button
+                      (click)="updateBookingStatus(booking, 'completed')"
+                      class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition">
+                      Complete
+                    </button>
+                    <button
+                      (click)="updateBookingStatus(booking, 'cancelled')"
+                      class="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition">
+                      Cancel
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    }
+  }
+
+  <!-- Booking Detail Modal -->
+  @if (selectedBooking()) {
+    <div
+      (click)="closeBookingDetail()"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div
+        (click)="$event.stopPropagation()"
+        class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div class="flex justify-between items-start mb-4">
+          <h2 class="text-xl font-bold text-gray-900">
+            @if (isEditMode()) {
+              Edit Booking
+            } @else {
+              Booking Details
+            }
+          </h2>
+          <button
+            (click)="closeBookingDetail()"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
+            ×
+          </button>
+        </div>
+
+        @if (selectedBooking(); as booking) {
+          <div class="space-y-3">
+            <div>
+              <h3 class="font-semibold text-lg text-gray-900">{{ booking.service_name }}</h3>
+              @if (!isEditMode()) {
+                <span [class]="getStatusClass(booking.status)" class="inline-block text-xs px-2 py-1 rounded font-medium mt-1">
+                  {{ booking.status }}
+                </span>
+              }
+            </div>
+
+            <div class="border-t pt-3 space-y-3">
+              @if (!isEditMode()) {
+                <!-- View Mode -->
+                <p class="text-sm"><strong>Date:</strong> {{ formatDate(booking.booking_date) }}</p>
+                <p class="text-sm"><strong>Time:</strong> {{ formatTime(booking.start_time) }}
+                  @if (booking.end_time) {
+                    - {{ formatTime(booking.end_time) }}
+                  }
+                </p>
+                @if (booking.duration_minutes) {
+                  <p class="text-sm"><strong>Duration:</strong> {{ booking.duration_minutes }} minutes</p>
+                }
+                @if (booking.customer_name) {
+                  <p class="text-sm"><strong>Customer:</strong> {{ booking.customer_name }}</p>
+                }
+                @if (booking.customer_email) {
+                  <p class="text-sm"><strong>Email:</strong> {{ booking.customer_email }}</p>
+                }
+                @if (booking.price) {
+                  <p class="text-sm"><strong>Price:</strong> ${{ booking.price }}</p>
+                }
+                @if (booking.notes) {
+                  <p class="text-sm"><strong>Notes:</strong> {{ booking.notes }}</p>
+                }
+              } @else {
+                <!-- Edit Mode -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    [(ngModel)]="editedBooking().booking_date"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                    <input
+                      type="time"
+                      [(ngModel)]="editedBooking().start_time"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                    <input
+                      type="time"
+                      [(ngModel)]="editedBooking().end_time"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="editedBooking().customer_name"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Customer Email</label>
+                  <input
+                    type="email"
+                    [(ngModel)]="editedBooking().customer_email"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    [(ngModel)]="editedBooking().status"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    [(ngModel)]="editedBooking().notes"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+              }
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="border-t pt-3 flex gap-2">
+              @if (!isEditMode()) {
+                <!-- View Mode Actions -->
+                <button
+                  (click)="startEditMode()"
+                  class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition">
+                  Edit
+                </button>
+                @if (booking.status === 'pending') {
+                  <button
+                    (click)="updateBookingStatus(booking, 'confirmed')"
+                    class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition">
+                    Confirm
+                  </button>
+                  <button
+                    (click)="updateBookingStatus(booking, 'cancelled'); closeBookingDetail()"
+                    class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition">
+                    Cancel
+                  </button>
+                }
+                @if (booking.status === 'confirmed') {
+                  <button
+                    (click)="updateBookingStatus(booking, 'completed'); closeBookingDetail()"
+                    class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition">
+                    Complete
+                  </button>
+                }
+              } @else {
+                <!-- Edit Mode Actions -->
+                <button
+                  (click)="saveBooking()"
+                  class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition">
+                  Save Changes
+                </button>
+                <button
+                  (click)="cancelEdit()"
+                  class="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition">
+                  Cancel
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>

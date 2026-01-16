@@ -14,6 +14,7 @@ import { EditProductComponent } from './pages/seller/edit-product/edit-product.c
 import { CreateProductComponent } from './pages/seller/create-product/create-product.component';
 import { CreateServiceComponent } from './pages/seller/create-service/create-service.component';
 import { EditServiceComponent } from './pages/seller/edit-service/edit-service.component';
+import { ServicesCalendarComponent } from './pages/seller/services-calendar/services-calendar.component';
 
 export const routes: Routes = [
     {
@@ -90,6 +91,11 @@ export const routes: Routes = [
         path: 'seller/services/:id/edit',
         component: EditServiceComponent,
         title: 'Edit Service'
+    },
+    {
+        path: 'seller/services/calendar',
+        component: ServicesCalendarComponent,
+        title: 'Services Calendar'
     },
     {
         path: 'callback',
