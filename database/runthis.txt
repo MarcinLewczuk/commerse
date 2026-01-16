@@ -1,0 +1,2 @@
+docker exec -i commerse_mysql \
+  mysql -uadmin -pCommersePassword commerse_db < database/schema.sql

@@ -97,3 +97,30 @@ CREATE TABLE IF NOT EXISTS service_images (
   INDEX idx_service_id (service_id),
   INDEX idx_display_order (display_order)
 );
+
+-- ============================================
+-- 7. SERVICE_BOOKINGS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS service_bookings (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  service_id INT NOT NULL,
+  shop_id INT NOT NULL,
+  customer_id INT NOT NULL,  -- user ID from users table
+  booking_date DATE NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME,
+  status ENUM('pending', 'confirmed', 'completed', 'cancelled') DEFAULT 'pending',
+  customer_name VARCHAR(255),  -- Optionally store customer name from Auth0
+  customer_email VARCHAR(255),  -- Optionally store customer email from Auth0
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
+  FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+  FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_service_id (service_id),
+  INDEX idx_shop_id (shop_id),
+  INDEX idx_customer_id (customer_id),
+  INDEX idx_booking_date (booking_date),
+  INDEX idx_status (status)
+);

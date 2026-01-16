@@ -605,3 +605,210 @@ server.post('/upload/services', uploadService.array('images', 10), (req: Request
     imageUrls
   });
 });
+
+// ============================================
+// SERVICE BOOKINGS ENDPOINTS
+// ============================================
+
+// Get all bookings for a seller's shop
+server.get('/seller/bookings/:shopId', (req: Request, res: Response) => {
+  const { shopId } = req.params;
+  
+  if (!shopId) {
+    return res.status(400).json({ error: 'Shop ID required' });
+  }
+  
+  db.query(
+    `SELECT 
+      sb.id,
+      sb.service_id,
+      sb.booking_date,
+      sb.start_time,
+      sb.end_time,
+      sb.status,
+      sb.customer_name,
+      sb.customer_email,
+      sb.notes,
+      sb.created_at,
+      s.name as service_name,
+      s.duration_minutes,
+      s.price
+    FROM service_bookings sb
+    JOIN services s ON sb.service_id = s.id
+    WHERE sb.shop_id = ?
+    ORDER BY sb.booking_date DESC, sb.start_time DESC`,
+    [shopId],
+    (error: mysql.QueryError | null, results: any[]) => {
+      if (error) {
+        console.error('Fetch seller bookings failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      return res.json(results);
+    }
+  );
+});
+
+// Create a new booking (for customers)
+server.post('/bookings', (req: Request, res: Response) => {
+  const { 
+    service_id, 
+    shop_id, 
+    customer_id, 
+    booking_date, 
+    start_time, 
+    end_time,
+    customer_name,
+    customer_email,
+    notes 
+  } = req.body;
+  
+  if (!service_id || !shop_id || !customer_id || !booking_date || !start_time) {
+    return res.status(400).json({ 
+      error: 'service_id, shop_id, customer_id, booking_date, and start_time are required' 
+    });
+  }
+  
+  db.query(
+    `INSERT INTO service_bookings 
+    (service_id, shop_id, customer_id, booking_date, start_time, end_time, customer_name, customer_email, notes) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [service_id, shop_id, customer_id, booking_date, start_time, end_time || null, customer_name || null, customer_email || null, notes || null],
+    (error: mysql.QueryError | null, result: any) => {
+      if (error) {
+        console.error('Create booking failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      return res.status(201).json({ 
+        id: result.insertId, 
+        message: 'Booking created successfully' 
+      });
+    }
+  );
+});
+
+// Update booking status
+server.put('/bookings/:id/status', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  if (!id || !status) {
+    return res.status(400).json({ error: 'Booking ID and status are required' });
+  }
+  
+  const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status value' });
+  }
+  
+  db.query(
+    'UPDATE service_bookings SET status = ? WHERE id = ?',
+    [status, id],
+    (error: mysql.QueryError | null, result: any) => {
+      if (error) {
+        console.error('Update booking status failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+      
+      return res.json({ message: 'Booking status updated successfully' });
+    }
+  );
+});
+
+// Update booking details
+server.put('/bookings/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { booking_date, start_time, end_time, customer_name, customer_email, notes, status } = req.body;
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Booking ID required' });
+  }
+
+  const updates: string[] = [];
+  const values: any[] = [];
+  
+  if (booking_date !== undefined) {
+    updates.push('booking_date = ?');
+    values.push(booking_date);
+  }
+  if (start_time !== undefined) {
+    updates.push('start_time = ?');
+    values.push(start_time);
+  }
+  if (end_time !== undefined) {
+    updates.push('end_time = ?');
+    values.push(end_time || null);
+  }
+  if (customer_name !== undefined) {
+    updates.push('customer_name = ?');
+    values.push(customer_name || null);
+  }
+  if (customer_email !== undefined) {
+    updates.push('customer_email = ?');
+    values.push(customer_email || null);
+  }
+  if (notes !== undefined) {
+    updates.push('notes = ?');
+    values.push(notes || null);
+  }
+  if (status !== undefined) {
+    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value' });
+    }
+    updates.push('status = ?');
+    values.push(status);
+  }
+  
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'No fields to update' });
+  }
+  
+  values.push(id);
+  
+  db.query(
+    `UPDATE service_bookings SET ${updates.join(', ')} WHERE id = ?`,
+    values,
+    (error: mysql.QueryError | null, result: any) => {
+      if (error) {
+        console.error('Update booking failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+      
+      return res.json({ message: 'Booking updated successfully' });
+    }
+  );
+});
+
+// Delete a booking
+server.delete('/bookings/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Booking ID required' });
+  }
+  
+  db.query(
+    'DELETE FROM service_bookings WHERE id = ?',
+    [id],
+    (error: mysql.QueryError | null, result: any) => {
+      if (error) {
+        console.error('Delete booking failed:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+      
+      return res.json({ message: 'Booking deleted successfully' });
+    }
+  );
+});
