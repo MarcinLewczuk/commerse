@@ -12,11 +12,11 @@
 CREATE TABLE IF NOT EXISTS users (
   id INT PRIMARY KEY AUTO_INCREMENT,
   auth0_id VARCHAR(255) NOT NULL UNIQUE,  -- Auth0's user.sub identifier
-  role ENUM('customer', 'seller', 'customer_seller') DEFAULT 'customer',
+  `role` ENUM('customer', 'seller', 'customer_seller') DEFAULT 'customer',
   shop_id INT UNIQUE,                      -- NULL for customers, populated for sellers
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_auth0_id (auth0_id),
-  INDEX idx_role (role),
+  INDEX idx_role (`role`),
   INDEX idx_shop_id (shop_id)
 );
 
