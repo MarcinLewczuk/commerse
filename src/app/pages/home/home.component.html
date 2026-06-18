@@ -1,152 +1,207 @@
-<section class="py-8">
-		<div class="mb-4 px-7 flex items-center justify-between">
-			<h2 class="text-2xl font-semibold">Featured products</h2>
-			<a [routerLink]="['/products']" class="text-sm px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">View all</a>
-		</div>
+<!-- Hero Section -->
+<section class="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white overflow-hidden">
+  <div class="absolute inset-0 bg-grid-white/[0.02] bg-[size:32px_32px]"></div>
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+    <div class="max-w-3xl">
+      <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+        Your marketplace.<br />Your way.
+      </h1>
+      <p class="text-xl sm:text-2xl text-gray-300 mb-8 leading-relaxed">
+        Discover products and services from trusted sellers. Shop with confidence, connect with ease.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a routerLink="/products" class="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl">
+          Explore Products
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+          </svg>
+        </a>
+        <a routerLink="/services" class="inline-flex items-center gap-2 px-8 py-4 bg-gray-800 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all border border-gray-700">
+          Browse Services
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-900 to-transparent"></div>
+</section>
 
-	@if (error()) {
-		<div class="text-red-600">{{ error() }}</div>
-	} @else if (loading()) {
-		<div>Loading…</div>
-	} @else {
-		<div class="relative scale-75 origin-top mx-auto">
-			<!-- Left arrow -->
-			@if (canPrev()) {
-				<button
-					type="button"
-					(click)="prevPage()"
-					class="absolute left-0 top-0 h-full w-10 bg-white/90 hover:bg-white text-black shadow border border-gray-300 z-10 cursor-pointer"
-					[attr.aria-label]="'Previous'"
-				>
-					‹
-				</button>
-			}
+<!-- Featured Products Section -->
+<section class="py-16 bg-gray-900">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-12 flex items-center justify-between">
+      <div>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white">Featured Products</h2>
+        <p class="text-gray-300 mt-2">Curated selection of top products</p>
+      </div>
+      <a [routerLink]="['/products']" class="hidden sm:inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition-all">
+        View all
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </a>
+    </div>
 
-			<!-- Right arrow -->
-			@if (canNext()) {
-				<button
-					type="button"
-					(click)="nextPage()"
-					class="absolute right-0 top-0 h-full w-10 bg-white/90 hover:bg-white text-black shadow border border-gray-300 z-10 cursor-pointer"
-					[attr.aria-label]="'Next'"
-				>
-					›
-				</button>
-			}
+  @if (error()) {
+    <div class="text-red-600 bg-red-50 px-4 py-3 rounded-lg">{{ error() }}</div>
+  } @else if (loading()) {
+    <div class="text-gray-600">Loading...</div>
+  } @else {
+    <div class="relative">
+      <!-- Left arrow -->
+      @if (canPrev()) {
+        <button
+          type="button"
+          (click)="prevPage()"
+          class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white hover:bg-gray-50 text-gray-900 shadow-xl rounded-full z-10 cursor-pointer border border-gray-200 flex items-center justify-center transition-all"
+          [attr.aria-label]="'Previous'"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+      }
 
-			<!-- Carousel scroller -->
-					<div
-				#carousel
-						class="overflow-x-auto no-scrollbar scroll-smooth"
-				(scroll)="onScroll()"
-			>
-						<div class="grid grid-flow-col auto-cols-[75%] sm:auto-cols-[50%] md:auto-cols-[33%] lg:auto-cols-[25%] gap-4 px-12">
-								@for (p of featured(); track p.id) {
-									<a
-										class="block bg-white border border-gray-200 shadow-sm transition rounded-md overflow-hidden focus:outline-none"
-										[routerLink]="['/products', slugify(p.name)]"
-									>
-										<!-- Product Image (Main Only) -->
-										<div class="aspect-4/3 bg-gray-100">
-											@if (getAllProductImages(p).length > 0) {
-												<img
-													[src]="getAllProductImages(p)[0]"
-													[alt]="p.name"
-													class="w-full h-full object-cover"
-												/>
-											} @else {
-												<img
-													[src]="getFirstProductImage(p)"
-													[alt]="p.name"
-													class="w-full h-full object-cover"
-												/>
-											}
-										</div>
-										<div class="p-3">
-											<div class="text-sm text-gray-500">Product</div>
-											<div class="font-medium truncate">{{ p.name }}</div>
-											<div class="text-gray-700">{{ displayPrice(p) }}</div>
-										</div>
-									</a>
-								}
-				</div>
-			</div>
-		</div>
-	}
+      <!-- Right arrow -->
+      @if (canNext()) {
+        <button
+          type="button"
+          (click)="nextPage()"
+          class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-gray-700 hover:bg-gray-600 text-white shadow-xl rounded-full z-10 cursor-pointer border border-gray-600 flex items-center justify-center transition-all"
+          [attr.aria-label]="'Next'"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      }
+
+      <!-- Carousel scroller -->
+      <div
+        #carousel
+        class="overflow-x-auto no-scrollbar scroll-smooth"
+        (scroll)="onScroll()"
+      >
+        <div class="grid grid-flow-col auto-cols-[85%] sm:auto-cols-[45%] md:auto-cols-[32%] lg:auto-cols-[24%] gap-6">
+          @for (p of featured(); track p.id) {
+            <a
+              class="group block bg-gray-800 border border-gray-700 hover:border-indigo-500 shadow-sm hover:shadow-lg transition-all rounded-2xl overflow-hidden"
+              [routerLink]="['/products', slugify(p.name)]"
+            >
+              <!-- Product Image -->
+              <div class="aspect-square bg-gray-700 overflow-hidden">
+                @if (getAllProductImages(p).length > 0) {
+                  <img
+                    [src]="getAllProductImages(p)[0]"
+                    [alt]="p.name"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                } @else {
+                  <img
+                    [src]="getFirstProductImage(p)"
+                    [alt]="p.name"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                }
+              </div>
+              <div class="p-4">
+                <div class="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-1">Product</div>
+                <div class="font-semibold text-white truncate mb-1">{{ p.name }}</div>
+                <div class="text-lg font-bold text-white">{{ displayPrice(p) }}</div>
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    </div>
+  }
+  </div>
 </section>
 
 <!-- Featured Services Section -->
-<section class="py-8">
-	<div class="mb-4 px-7 flex items-center justify-between">
-		<h2 class="text-2xl font-semibold">Featured services</h2>
-		<a [routerLink]="['/services']" class="text-sm px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">View all</a>
-	</div>
+<section class="py-16 bg-gray-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="mb-12 flex items-center justify-between">
+    <div>
+      <h2 class="text-3xl sm:text-4xl font-bold text-white">Featured Services</h2>
+      <p class="text-gray-300 mt-2">Professional services at your fingertips</p>
+    </div>
+    <a [routerLink]="['/services']" class="hidden sm:inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition-all">
+      View all
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+      </svg>
+    </a>
+  </div>
 
-	@if (servicesError()) {
-		<div class="text-red-600">{{ servicesError() }}</div>
-	} @else if (servicesLoading()) {
-		<div>Loading…</div>
-	} @else {
-		<div class="relative scale-75 origin-top mx-auto">
-			<!-- Left arrow -->
-			@if (canPrevServices()) {
-				<button
-					type="button"
-					(click)="prevPageServices()"
-					class="absolute left-0 top-0 h-full w-10 bg-white/90 hover:bg-white text-black shadow border border-gray-300 z-10 cursor-pointer"
-					[attr.aria-label]="'Previous'"
-				>
-					‹
-				</button>
-			}
+  @if (servicesError()) {
+    <div class="text-red-600 bg-red-50 px-4 py-3 rounded-lg">{{ servicesError() }}</div>
+  } @else if (servicesLoading()) {
+    <div class="text-gray-600">Loading...</div>
+  } @else {
+    <div class="relative">
+      <!-- Left arrow -->
+      @if (canPrevServices()) {
+        <button
+          type="button"
+          (click)="prevPageServices()"
+          class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white hover:bg-gray-50 text-gray-900 shadow-xl rounded-full z-10 cursor-pointer border border-gray-200 flex items-center justify-center transition-all"
+          [attr.aria-label]="'Previous'"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+      }
 
-			<!-- Right arrow -->
-			@if (canNextServices()) {
-				<button
-					type="button"
-					(click)="nextPageServices()"
-					class="absolute right-0 top-0 h-full w-10 bg-white/90 hover:bg-white text-black shadow border border-gray-300 z-10 cursor-pointer"
-					[attr.aria-label]="'Next'"
-				>
-					›
-				</button>
-			}
+      <!-- Right arrow -->
+      @if (canNextServices()) {
+        <button
+          type="button"
+          (click)="nextPageServices()"
+          class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-gray-700 hover:bg-gray-600 text-white shadow-xl rounded-full z-10 cursor-pointer border border-gray-600 flex items-center justify-center transition-all"
+          [attr.aria-label]="'Next'"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      }
 
-			<!-- Carousel scroller -->
-			<div
-				#servicesCarousel
-				class="overflow-x-auto no-scrollbar scroll-smooth"
-				(scroll)="onScrollServices()"
-			>
-				<div class="grid grid-flow-col auto-cols-[75%] sm:auto-cols-[50%] md:auto-cols-[33%] lg:auto-cols-[25%] gap-4 px-12">
-					@for (s of featuredServices(); track s.id) {
-						<a
-							class="block bg-white border border-gray-200 shadow-sm transition rounded-md overflow-hidden focus:outline-none"
-							[routerLink]="['/services', slugifyService(s.name)]"
-						>
-							<!-- Service Image -->
-							<div class="aspect-4/3 bg-gray-100">
-								@if (getAllServiceImages(s).length > 0) {
-									<img
-										[src]="getAllServiceImages(s)[0]"
-										[alt]="s.name"
-										class="w-full h-full object-cover"
-									/>
-								} @else {
-									<img
-										[src]="getFirstServiceImage(s)"
-										[alt]="s.name"
-										class="w-full h-full object-cover"
-									/>
-								}
-							</div>
-							<div class="p-3">
-								<div class="text-sm text-gray-500">Service</div>
-								<div class="font-medium truncate">{{ s.name }}</div>
-								<div class="text-gray-700">{{ displayPrice(s) }}</div>
-								@if (s.duration_minutes) {
-									<div class="text-sm text-gray-500">{{ displayDuration(s) }}</div>
-								}
+      <!-- Carousel scroller -->
+      <div
+        #servicesCarousel
+        class="overflow-x-auto no-scrollbar scroll-smooth"
+        (scroll)="onScrollServices()"
+      >
+        <div class="grid grid-flow-col auto-cols-[85%] sm:auto-cols-[45%] md:auto-cols-[32%] lg:auto-cols-[24%] gap-6">
+          @for (s of featuredServices(); track s.id) {
+            <a
+              class="group block bg-gray-700 border border-gray-600 hover:border-indigo-500 shadow-sm hover:shadow-lg transition-all rounded-2xl overflow-hidden"
+              [routerLink]="['/services', slugifyService(s.name)]"
+            >
+              <!-- Service Image -->
+              <div class="aspect-square bg-gray-600 overflow-hidden">
+                @if (getAllServiceImages(s).length > 0) {
+                  <img
+                    [src]="getAllServiceImages(s)[0]"
+                    [alt]="s.name"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                } @else {
+                  <img
+                    [src]="getFirstServiceImage(s)"
+                    [alt]="s.name"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                }
+              </div>
+              <div class="p-4">
+                <div class="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-1">Service</div>
+                <div class="font-semibold text-white truncate mb-1">{{ s.name }}</div>
+                <div class="text-lg font-bold text-white">{{ displayPrice(s) }}</div>
+                @if (s.duration_minutes) {
+                  <div class="text-sm text-gray-500 mt-1">{{ displayDuration(s) }}</div>
+                }
 							</div>
 						</a>
 					}
@@ -154,33 +209,30 @@
 			</div>
 		</div>
 	}
+	</div>
 </section>
 
-<!-- AI Assistant promo -->
-<section class="py-8">
-	<div class="px-7">
-		<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-			<div class="grid grid-cols-1 md:grid-cols-4">
-				<!-- Card / visual -->
-			<div class="p-8 bg-linear-to-br from-indigo-50 to-purple-50 flex items-center justify-center md:col-span-1 cursor-default">
-					<div class="text-center">
-						<div class="mx-auto mb-3 h-14 w-14 rounded-md bg-indigo-600 text-white grid place-items-center text-2xl">🤖</div>
-						<h3 class="text-xl font-semibold">AI Assistant</h3>
-					</div>
-				</div>
-				<!-- Info + CTA -->
-				<div class="p-8 flex flex-col justify-center md:col-span-3">
-							<p class="text-gray-600 mb-4 text-center max-w-[75ch] mx-auto">Check out the AI Assistant to create products for your business from a single prompt. Provide a title, description, and price — and we’ll generate the product for you!</p>
-					<div class="mt-2 w-full">
-						<div class="max-w-[100ch] mx-auto flex justify-end">
-							<a [routerLink]="['/ai-assistant']" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">
-								See more
-								<span aria-hidden="true" class="text-base">→</span>
-							</a>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	</section>
+<!-- AI Assistant Promo -->
+<section class="py-20 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-8 md:p-12">
+<div class="max-w-3xl mx-auto text-center">
+<div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-2xl mb-6 shadow-xl">
+<span class="text-4xl" role="img" aria-label="AI Robot">🤖</span>
+</div>
+<h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
+AI-Powered Product Creation
+</h2>
+<p class="text-xl text-white/90 mb-8 leading-relaxed">
+Create professional product listings in seconds. Just provide a title, description, and price � our AI does the rest.
+</p>
+<a [routerLink]="['/ai-assistant']" class="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 font-semibold rounded-xl hover:bg-gray-50 transition-all shadow-xl hover:shadow-2xl">
+Try AI Assistant
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+</svg>
+</a>
+</div>
+</div>
+</div>
+</section>

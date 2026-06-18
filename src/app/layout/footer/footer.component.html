@@ -1,5 +1,39 @@
-<footer class="bg-gray-50 text-gray-600">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm">
-    {{ currentYear }} © Commerse
+<footer class="bg-gray-900 text-gray-300 border-t border-gray-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <!-- Brand -->
+      <div class="col-span-1 md:col-span-2">
+        <div class="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg mb-4">
+          <span class="text-xl font-bold text-white">Commerse</span>
+        </div>
+        <p class="text-sm text-gray-400 max-w-md">
+          Your marketplace for products and services. Shop with confidence, connect with ease.
+        </p>
+      </div>
+      
+      <!-- Quick Links -->
+      <div>
+        <h3 class="font-semibold text-white mb-4">Marketplace</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a routerLink="/products" class="hover:text-white transition-colors">Products</a></li>
+          <li><a routerLink="/services" class="hover:text-white transition-colors">Services</a></li>
+          <li><a routerLink="/shops" class="hover:text-white transition-colors">Shops</a></li>
+        </ul>
+      </div>
+      
+      <!-- Account Links -->
+      <div>
+        <h3 class="font-semibold text-white mb-4">Account</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a routerLink="/profile" class="hover:text-white transition-colors">Profile</a></li>
+          <li><a routerLink="/dashboard" class="hover:text-white transition-colors">Dashboard</a></li>
+          <li><a routerLink="/ai-assistant" class="hover:text-white transition-colors">AI Assistant</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="mt-12 pt-8 border-t border-gray-800 text-center text-sm text-gray-400">
+      {{ currentYear }} © Commerse. All rights reserved.
+    </div>
   </div>
 </footer>

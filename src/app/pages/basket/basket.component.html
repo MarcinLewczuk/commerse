@@ -1,24 +1,29 @@
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-	<div class="mb-8">
-		<h1 class="text-3xl font-bold text-gray-900">Shopping Basket</h1>
-		<p class="text-gray-600 mt-2">Review your items before checkout</p>
+<main class="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+	<!-- Header Section -->
+	<div class="bg-gray-800 border-b border-gray-700">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+			<h1 class="text-4xl font-bold text-white mb-2">Shopping Basket</h1>
+			<p class="text-lg text-gray-300">Review your items before checkout</p>
+		</div>
 	</div>
+
+	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
 
 	@if (items().length === 0) {
 		<!-- Empty basket state -->
-		<div class="bg-white border border-gray-200 rounded-lg shadow-sm p-12 text-center">
-			<div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-				<svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+		<div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-sm p-16 text-center">
+			<div class="mx-auto w-32 h-32 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center mb-6">
+				<svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
 				</svg>
 			</div>
-			<h2 class="text-xl font-semibold text-gray-900 mb-2">Your basket is empty</h2>
-			<p class="text-gray-600 mb-6">Start shopping to add items to your basket</p>
+			<h2 class="text-2xl font-semibold text-white mb-2">Your basket is empty</h2>
+			<p class="text-gray-300 mb-8">Start shopping to add items to your basket</p>
 			<div class="flex gap-4 justify-center">
-				<a [routerLink]="['/products']" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">
+				<a [routerLink]="['/products']" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg transition-all">
 					Browse Products
 				</a>
-				<a [routerLink]="['/services']" class="px-6 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-md">
+				<a [routerLink]="['/services']" class="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-gray-50 text-gray-700 font-semibold border-2 border-gray-300 rounded-xl transition-all">
 					Browse Services
 				</a>
 			</div>
@@ -29,7 +34,7 @@
 			<!-- Items list -->
 			<div class="lg:col-span-2 space-y-4">
 				@for (basketItem of items(); track basketItem.item.id + basketItem.type) {
-					<div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+					<div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
 						<div class="flex gap-4">
 							<!-- Image -->
 							<a [routerLink]="getItemLink(basketItem.item, basketItem.type)" class="flex-shrink-0">
@@ -142,4 +147,4 @@
 			</div>
 		</div>
 	}
-</main>
+</div>

@@ -2,22 +2,22 @@
 	<div class="mb-8">
 		<div class="flex justify-between items-center mb-6">
 			<div>
-				<h1 class="text-3xl font-bold text-gray-900 mb-2">My Shop</h1>
+				<h1 class="text-3xl font-bold text-white mb-2">My Shop</h1>
 				@if (shop$ | async; as shop) {
-					<p class="text-gray-600">{{ shop.name }}</p>
+					<p class="text-gray-300">{{ shop.name }}</p>
 				}
 			</div>
 		</div>
 
 		<!-- Tabs Navigation -->
-		<div class="flex space-x-4 border-b border-gray-200">
+		<div class="flex space-x-4 border-b border-gray-700">
 			<button 
 				(click)="setActiveTab('products')"
 				[class.border-b-2]="activeTab() === 'products'"
 				[class.border-purple-600]="activeTab() === 'products'"
 				[class.text-purple-600]="activeTab() === 'products'"
-				[class.text-gray-600]="activeTab() !== 'products'"
-				class="py-3 px-4 font-semibold transition-colors hover:text-purple-600 cursor-pointer">
+				[class.text-gray-300]="activeTab() !== 'products'"
+				class="py-3 px-4 font-semibold transition-colors hover:text-purple-400 cursor-pointer">
 				Products
 			</button>
 			<button 
@@ -25,8 +25,8 @@
 				[class.border-b-2]="activeTab() === 'services'"
 				[class.border-purple-600]="activeTab() === 'services'"
 				[class.text-purple-600]="activeTab() === 'services'"
-				[class.text-gray-600]="activeTab() !== 'services'"
-				class="py-3 px-4 font-semibold transition-colors hover:text-purple-600 cursor-pointer">
+				[class.text-gray-300]="activeTab() !== 'services'"
+				class="py-3 px-4 font-semibold transition-colors hover:text-purple-400 cursor-pointer">
 				Services
 			</button>
 		</div>
@@ -45,7 +45,7 @@
 		@if (products$ | async; as products) {
 			@if (products.length === 0) {
 				<div class="p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">
-					<p class="text-gray-600">No products yet. Start adding products to your shop!</p>
+					<p class="text-gray-300">No products yet. Start adding products to your shop!</p>
 				</div>
 			} @else {
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -59,26 +59,26 @@
 								/>
 							} @else {
 								<div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-									<span class="text-gray-400">No image</span>
+									<span class="text-gray-800">No image</span>
 								</div>
 							}
 							
 							<div class="p-4">
-								<h3 class="text-lg font-semibold text-gray-900 mb-2">{{ product.name }}</h3>
+								<h3 class="text-lg font-semibold text-white mb-2">{{ product.name }}</h3>
 								
 								@if (product.description) {
-									<p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ product.description }}</p>
+									<p class="text-sm text-gray-300 mb-3 line-clamp-2 overflow-hidden break-words">{{ product.description }}</p>
 								}
 								
 								<div class="flex items-center justify-between mb-3">
-									<span class="text-2xl font-bold text-gray-900">${{ product.price }}</span>
+									<span class="text-2xl font-bold text-white">${{ product.price }}</span>
 									<span class="text-sm px-2 py-1 bg-blue-100 text-blue-800 rounded">
 										Stock: {{ product.stock_quantity }}
 									</span>
 								</div>
 
 								@if (product.sku) {
-									<p class="text-xs text-gray-500 mb-3">SKU: {{ product.sku }}</p>
+									<p class="text-xs text-gray-400 mb-3">SKU: {{ product.sku }}</p>
 								}
 
 								<div class="flex gap-2">
@@ -88,7 +88,7 @@
 									<button 
 										(click)="openDeleteConfirmation(product)"
 										[disabled]="deleting() === product.id"
-										class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-300 text-red-800 disabled:text-gray-600 text-sm font-medium rounded-md cursor-pointer">
+										class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-300 text-red-800 disabled:text-gray-800 text-sm font-medium rounded-md cursor-pointer">
 										{{ deleting() === product.id ? 'Deleting...' : 'Delete' }}
 									</button>
 								</div>
@@ -99,7 +99,7 @@
 			}
 		} @else {
 			<div class="text-center py-12">
-				<p class="text-gray-600">Loading products...</p>
+				<p class="text-gray-300">Loading products...</p>
 			</div>
 		}
 	}
@@ -122,7 +122,7 @@
 		@if (services$ | async; as services) {
 			@if (services.length === 0) {
 				<div class="p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">
-					<p class="text-gray-600">No services yet. Start adding services to your shop!</p>
+					<p class="text-gray-300">No services yet. Start adding services to your shop!</p>
 				</div>
 			} @else {
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -136,17 +136,17 @@
 								/>
 							} @else {
 								<div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-									<svg class="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+									<svg class="w-16 h-16 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
 										<path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/>
 									</svg>
 								</div>
 							}
 							
 							<div class="p-4">
-								<h3 class="text-lg font-semibold text-gray-900 mb-2">{{ service.name }}</h3>
+								<h3 class="text-lg font-semibold text-white mb-2">{{ service.name }}</h3>
 								
 								@if (service.description) {
-									<p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ service.description }}</p>
+									<p class="text-sm text-gray-300 mb-3 line-clamp-2 overflow-hidden break-words">{{ service.description }}</p>
 								}
 								
 								<div class="flex items-center justify-between mb-3">
@@ -167,7 +167,7 @@
 									<button 
 										(click)="deleteService(service)"
 										[disabled]="deleting() === service.id"
-										class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-300 text-red-800 disabled:text-gray-600 text-sm font-medium rounded-md cursor-pointer">
+									class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-300 text-red-800 disabled:text-gray-800 text-sm font-medium rounded-md cursor-pointer">
 										{{ deleting() === service.id ? 'Deleting...' : 'Delete' }}
 									</button>
 								</div>
@@ -178,7 +178,7 @@
 			}
 		} @else {
 			<div class="text-center py-12">
-				<p class="text-gray-600">Loading services...</p>
+				<p class="text-gray-300">Loading services...</p>
 			</div>
 		}
 	}
