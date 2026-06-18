@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { RouterLink, RouterLinkWithHref } from '@angular/router';
 import { AuthService } from '@auth0/auth0-angular';
@@ -18,6 +18,11 @@ export class HeaderComponent {
   
   isSeller$ = this.shopService.isSeller();
   basketItemCount = this.basketService.itemCount;
+  
+  constructor() {
+    // Permanently enable dark mode
+    document.documentElement.classList.add('dark');
+  }
   
   logout() {
     this.auth.logout({ logoutParams: { returnTo: window.location.origin } });
