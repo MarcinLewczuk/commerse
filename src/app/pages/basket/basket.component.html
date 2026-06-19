@@ -1,150 +1,171 @@
 <main class="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
-	<!-- Header Section -->
-	<div class="bg-gray-800 border-b border-gray-700">
-		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-			<h1 class="text-4xl font-bold text-white mb-2">Shopping Basket</h1>
-			<p class="text-lg text-gray-300">Review your items before checkout</p>
-		</div>
-	</div>
+    <div class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <h1 class="text-4xl font-bold text-white mb-2">Shopping Basket</h1>
+            <p class="text-lg text-gray-300">Review your items before checkout</p>
+        </div>
+    </div>
 
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
 
-	@if (items().length === 0) {
-		<!-- Empty basket state -->
-		<div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-sm p-16 text-center">
-			<div class="mx-auto w-32 h-32 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center mb-6">
-				<svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-				</svg>
-			</div>
-			<h2 class="text-2xl font-semibold text-white mb-2">Your basket is empty</h2>
-			<p class="text-gray-300 mb-8">Start shopping to add items to your basket</p>
-			<div class="flex gap-4 justify-center">
-				<a [routerLink]="['/products']" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg transition-all">
-					Browse Products
-				</a>
-				<a [routerLink]="['/services']" class="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-gray-50 text-gray-700 font-semibold border-2 border-gray-300 rounded-xl transition-all">
-					Browse Services
-				</a>
-			</div>
-		</div>
-	} @else {
-		<!-- Basket with items -->
-		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-			<!-- Items list -->
-			<div class="lg:col-span-2 space-y-4">
-				@for (basketItem of items(); track basketItem.item.id + basketItem.type) {
-					<div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
-						<div class="flex gap-4">
-							<!-- Image -->
-							<a [routerLink]="getItemLink(basketItem.item, basketItem.type)" class="flex-shrink-0">
-								<img
-									[src]="getFirstImage(basketItem.item.image_urls)"
-									[alt]="basketItem.item.name"
-									class="w-24 h-24 object-cover rounded-md"
-								/>
-							</a>
+    @if (items().length === 0) {
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-sm p-16 text-center">
+            <div class="mx-auto w-32 h-32 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center mb-6">
+                <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Your basket is empty</h2>
+            <p class="text-gray-400 mb-8">Looks like you haven't added anything to your cart yet.</p>
+            <a routerLink="/products" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
+                Start Shopping
+            </a>
+        </div>
+    } @else {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-4">
+                @for (basketItem of items(); track basketItem.item.id) {
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 flex gap-4 items-center shadow-sm">
+                        <img 
+                            [src]="getFirstImage(basketItem.item.image_urls)" 
+                            [alt]="basketItem.item.name"
+                            class="w-24 h-24 object-cover rounded-md bg-gray-50 border border-gray-100 cursor-pointer"
+                            [routerLink]="getItemLink(basketItem.item, basketItem.type)"
+                        >
+                        
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start mb-1">
+                                <h3 
+                                    class="text-lg font-medium text-gray-900 truncate pr-4 cursor-pointer hover:text-indigo-600 transition-colors"
+                                    [routerLink]="getItemLink(basketItem.item, basketItem.type)"
+                                >
+                                    {{ basketItem.item.name }}
+                                </h3>
+                                <span class="font-semibold text-gray-900 whitespace-nowrap">
+                                    {{ displayItemTotal(basketItem.item.price, basketItem.quantity) }}
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center gap-2 mt-4">
+                                <div class="flex items-center border border-gray-300 rounded-md bg-white">
+                                    <button 
+                                        (click)="decreaseQuantity(basketItem.type, basketItem.item.id)"
+                                        class="px-3 py-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors border-r border-gray-300"
+                                        [disabled]="basketItem.quantity <= 1"
+                                        [class.opacity-50]="basketItem.quantity <= 1"
+                                    >
+                                        −
+                                    </button>
+                                    <span class="px-4 py-1 font-medium text-gray-900 min-w-[2.5rem] text-center">
+                                        {{ basketItem.quantity }}
+                                    </span>
+                                    <button 
+                                        (click)="increaseQuantity(basketItem.type, basketItem.item.id)"
+                                        class="px-3 py-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors border-l border-gray-300"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                
+                                <button 
+                                    (click)="removeItem(basketItem.type, basketItem.item.id)"
+                                    class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all ml-auto group"
+                                    title="Remove item"
+                                >
+                                    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
 
-							<!-- Details -->
-							<div class="flex-grow">
-								<div class="flex justify-between items-start mb-2">
-									<div>
-										<span class="inline-block px-2 py-0.5 text-xs font-medium rounded-full mb-1"
-											[class.bg-blue-100]="basketItem.type === 'product'"
-											[class.text-blue-700]="basketItem.type === 'product'"
-											[class.bg-green-100]="basketItem.type === 'service'"
-											[class.text-green-700]="basketItem.type === 'service'">
-											{{ basketItem.type === 'product' ? 'Product' : 'Service' }}
-										</span>
-										<h3 class="font-semibold text-gray-900">
-											<a [routerLink]="getItemLink(basketItem.item, basketItem.type)" class="hover:text-indigo-600">
-												{{ basketItem.item.name }}
-											</a>
-										</h3>
-										<p class="text-sm text-gray-600">{{ displayPrice(basketItem.item.price) }} each</p>
-									</div>
-									<button
-										(click)="removeItem(basketItem.type, basketItem.item.id)"
-										class="text-red-600 hover:text-red-700 p-1"
-										title="Remove from basket"
-									>
-										<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-										</svg>
-									</button>
-								</div>
+                <button
+                    (click)="clearBasket()"
+                    class="w-full px-4 py-2 text-red-600 hover:text-red-700 border border-red-300 hover:border-red-400 rounded-md"
+                >
+                    Clear Basket
+                </button>
+            </div>
 
-								<!-- Quantity controls -->
-								<div class="flex items-center gap-4 mt-3">
-									<div class="flex items-center border border-gray-300 rounded-md">
-										<button
-											(click)="decreaseQuantity(basketItem.type, basketItem.item.id)"
-											class="px-3 py-1 hover:bg-gray-100 text-gray-600"
-											[disabled]="basketItem.quantity <= 1"
-										>
-											−
-										</button>
-										<span class="px-4 py-1 border-x border-gray-300 min-w-[3rem] text-center">{{ basketItem.quantity }}</span>
-										<button
-											(click)="increaseQuantity(basketItem.type, basketItem.item.id)"
-											class="px-3 py-1 hover:bg-gray-100 text-gray-600"
-										>
-											+
-										</button>
-									</div>
-									<span class="font-semibold text-gray-900">
-										{{ displayItemTotal(basketItem.item.price, basketItem.quantity) }}
-									</span>
-								</div>
-							</div>
-						</div>
-					</div>
-				}
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 sticky top-4">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+                    
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between text-gray-600">
+                            <span>Items ({{ itemCount() }})</span>
+                            <span>{{ displayPrice(totalPrice()) }}</span>
+                        </div>
+                        <div class="flex justify-between text-gray-600">
+                            <span>Shipping</span>
+                            <span class="text-green-600">FREE</span>
+                        </div>
+                        <div class="border-t border-gray-200 pt-3 flex justify-between text-lg font-semibold text-gray-900">
+                            <span>Total</span>
+                            <span>{{ displayPrice(totalPrice()) }}</span>
+                        </div>
+                    </div>
 
-				<!-- Clear basket button -->
-				<button
-					(click)="clearBasket()"
-					class="w-full px-4 py-2 text-red-600 hover:text-red-700 border border-red-300 hover:border-red-400 rounded-md"
-				>
-					Clear Basket
-				</button>
-			</div>
+                    <form [formGroup]="checkoutForm" class="border-t border-gray-200 pt-6 mb-6">
+                        <h3 class="text-sm font-medium text-gray-900 mb-4">Customer Information</h3>
+                        
+                        <div class="mb-4">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
+                            <input 
+                                type="email" 
+                                formControlName="email" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-[#635BFF] focus:border-[#635BFF] bg-white text-gray-900 outline-none transition-colors"
+                                placeholder="you@example.com"
+                            >
+                            @if (checkoutForm.get('email')?.touched && checkoutForm.get('email')?.hasError('required')) {
+                                <p class="text-red-500 text-xs mt-1">Email is required.</p>
+                            }
+                            @if (checkoutForm.get('email')?.touched && checkoutForm.get('email')?.hasError('emailFormat')) {
+                                <p class="text-red-500 text-xs mt-1">Please enter a valid email format.</p>
+                            }
+                        </div>
 
-			<!-- Summary sidebar -->
-			<div class="lg:col-span-1">
-				<div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 sticky top-4">
-					<h2 class="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
-					
-					<div class="space-y-3 mb-6">
-						<div class="flex justify-between text-gray-600">
-							<span>Items ({{ itemCount() }})</span>
-							<span>{{ displayPrice(totalPrice()) }}</span>
-						</div>
-						<div class="flex justify-between text-gray-600">
-							<span>Shipping</span>
-							<span class="text-green-600">FREE</span>
-						</div>
-						<div class="border-t border-gray-200 pt-3 flex justify-between text-lg font-semibold text-gray-900">
-							<span>Total</span>
-							<span>{{ displayPrice(totalPrice()) }}</span>
-						</div>
-					</div>
+                        <div class="mb-6">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Name on Card</label>
+                            <input 
+                                type="text" 
+                                formControlName="name" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-[#635BFF] focus:border-[#635BFF] bg-white text-gray-900 outline-none transition-colors"
+                                placeholder="John Doe"
+                            >
+                            @if (checkoutForm.get('name')?.touched && checkoutForm.get('name')?.hasError('required')) {
+                                <p class="text-red-500 text-xs mt-1">Name is required.</p>
+                            }
+                            @if (checkoutForm.get('name')?.touched && checkoutForm.get('name')?.hasError('invalidName')) {
+                                <p class="text-red-500 text-xs mt-1">Please enter your first and last name.</p>
+                            }
+                        </div>
 
-					<button
-						(click)="onBuyNow()"
-						class="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md mb-3"
-					>
-						Buy Now
+                        <h3 class="text-sm font-medium text-gray-900 mb-3">Payment Details</h3>
+                        <div id="card-element" class="p-3 border border-gray-300 rounded-md bg-gray-50 shadow-inner min-h-[46px]"></div>
+                        
+                        @if (cardError) {
+                            <div class="text-red-500 text-xs mt-2 font-medium flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                {{ cardError }}
+                            </div>
+                        }
+                    </form>
+
+                    <button
+                        type="button"
+                        (click)="onBuyNow()"
+                        class="w-full flex items-center justify-center px-6 py-3 bg-[#635BFF] hover:bg-[#4B45C6] text-white font-medium rounded-lg shadow-sm transition-colors duration-200"
+                    >
+                        <span class="mr-2">Pay {{ displayPrice(totalPrice()) }} with</span>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg"
+							alt="Stripe" class="h-5 w-auto ml-2 brightness-0 invert object-contain" />
 					</button>
-
-					<a
-						[routerLink]="['/products']"
-						class="block w-full px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 text-center border border-gray-300 rounded-md"
-					>
-						Continue Shopping
-					</a>
-				</div>
-			</div>
-		</div>
-	}
-</div>
+                </div>
+            </div>
+        </div>
+    } </div> </main> ```

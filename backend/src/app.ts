@@ -1,5 +1,6 @@
 import path from 'path';
 import dotenv from 'dotenv';
+import Stripe from 'stripe';
 dotenv.config({ path: path.resolve(__dirname, '../private/.env') });
 
 import express, { Request, Response } from 'express';
@@ -152,7 +153,7 @@ server.get('/products', (req: Request, res: Response) => {
       const productsWithImages = results.map((p: any) => {
         const result = {
           ...p,
-          image_urls: p.image_urls 
+          image_urls: p.image_urls
             ? p.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
             : []
         };
@@ -189,7 +190,7 @@ server.get('/products/:id', (req: Request, res: Response) => {
       const product = results[0];
       // Convert comma-separated image strings to arrays and prepend full URL
       const apiUrl = `http://localhost:${process.env['PORT']}`;
-      product.image_urls = product.image_urls 
+      product.image_urls = product.image_urls
         ? product.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
         : [];
       return res.json(product);
@@ -217,7 +218,7 @@ server.get('/products/slug/:slug', (req: Request, res: Response) => {
       }
       // Convert comma-separated image strings to arrays and prepend full URL
       const apiUrl = `http://localhost:${process.env['PORT']}`;
-      match.image_urls = match.image_urls 
+      match.image_urls = match.image_urls
         ? match.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
         : [];
       return res.json(match);
@@ -250,7 +251,7 @@ server.get('/shops/:shopId/products', (req: Request, res: Response) => {
       const productsWithImages = results.map((p: any) => {
         const result = {
           ...p,
-          image_urls: p.image_urls 
+          image_urls: p.image_urls
             ? p.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
             : []
         };
@@ -304,7 +305,7 @@ server.get('/services', (req: Request, res: Response) => {
       const apiUrl = `http://localhost:${process.env['PORT']}`;
       const servicesWithImages = results.map((s: any) => ({
         ...s,
-        image_urls: s.image_urls 
+        image_urls: s.image_urls
           ? s.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
           : []
       }));
@@ -339,7 +340,7 @@ server.get('/services/:id', (req: Request, res: Response) => {
       const apiUrl = `http://localhost:${process.env['PORT']}`;
       const service = {
         ...results[0],
-        image_urls: results[0].image_urls 
+        image_urls: results[0].image_urls
           ? results[0].image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
           : []
       };
@@ -373,7 +374,7 @@ server.get('/services/slug/:slug', (req: Request, res: Response) => {
       }
       const serviceWithImages = {
         ...service,
-        image_urls: service.image_urls 
+        image_urls: service.image_urls
           ? service.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
           : []
       };
@@ -406,7 +407,7 @@ server.get('/services/shop/:shopId', (req: Request, res: Response) => {
       const apiUrl = `http://localhost:${process.env['PORT']}`;
       const servicesWithImages = results.map((s: any) => ({
         ...s,
-        image_urls: s.image_urls 
+        image_urls: s.image_urls
           ? s.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
           : []
       }));
@@ -418,9 +419,9 @@ server.get('/services/shop/:shopId', (req: Request, res: Response) => {
 // Create a new service
 server.post('/services', (req: Request, res: Response) => {
   const { shop_id, name, description, price, duration_minutes, service_code, imageUrls } = req.body;
-  
+
   console.log('Creating service with data:', { shop_id, name, description, price, duration_minutes, service_code, imageUrls });
-  
+
   if (!shop_id || !name || !price) {
     return res.status(400).json({ error: 'shop_id, name, and price are required' });
   }
@@ -438,9 +439,9 @@ server.post('/services', (req: Request, res: Response) => {
         });
         return res.status(500).json({ error: 'Internal server error', details: error.message });
       }
-      
+
       const serviceId = result.insertId;
-      
+
       // Insert service images if provided
       if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {
         const imageValues = imageUrls.map((url: string, index: number) => [serviceId, url, index]);
@@ -454,7 +455,7 @@ server.post('/services', (req: Request, res: Response) => {
           }
         );
       }
-      
+
       return res.status(201).json({ id: serviceId, message: 'Service created successfully' });
     }
   );
@@ -464,14 +465,14 @@ server.post('/services', (req: Request, res: Response) => {
 server.put('/services/:id', (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, description, price, duration_minutes } = req.body;
-  
+
   if (!id) {
     return res.status(400).json({ error: 'Service ID required' });
   }
 
   const updates: string[] = [];
   const values: any[] = [];
-  
+
   if (name !== undefined) {
     updates.push('name = ?');
     values.push(name);
@@ -488,13 +489,13 @@ server.put('/services/:id', (req: Request, res: Response) => {
     updates.push('duration_minutes = ?');
     values.push(duration_minutes);
   }
-  
+
   if (updates.length === 0) {
     return res.status(400).json({ error: 'No fields to update' });
   }
-  
+
   values.push(id);
-  
+
   db.query(
     `UPDATE services SET ${updates.join(', ')} WHERE id = ?`,
     values,
@@ -512,29 +513,29 @@ server.put('/services/:id', (req: Request, res: Response) => {
 server.put('/services/:id/images', (req: Request, res: Response) => {
   const { id } = req.params;
   const { imageUrls } = req.body;
-  
+
   if (!id) {
     return res.status(400).json({ error: 'Service ID required' });
   }
-  
+
   if (!Array.isArray(imageUrls)) {
     return res.status(400).json({ error: 'imageUrls must be an array' });
   }
-  
+
   // Delete existing images
   db.query('DELETE FROM service_images WHERE service_id = ?', [id], (delError: mysql.QueryError | null) => {
     if (delError) {
       console.error('Delete service images failed:', delError);
       return res.status(500).json({ error: 'Failed to delete old images' });
     }
-    
+
     // Insert new images
     if (imageUrls.length > 0) {
       const imageValues = imageUrls.map((url: string, index: number) => {
         const cleanUrl = url.replace(/^https?:\/\/[^\/]+/, '');
         return [id, cleanUrl, index];
       });
-      
+
       db.query(
         'INSERT INTO service_images (service_id, image_url, display_order) VALUES ?',
         [imageValues],
@@ -555,21 +556,21 @@ server.put('/services/:id/images', (req: Request, res: Response) => {
 // Delete a service
 server.delete('/services/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   if (!id) {
     return res.status(400).json({ error: 'Service ID required' });
   }
-  
+
   db.query('DELETE FROM services WHERE id = ?', [id], (error: mysql.QueryError | null, result: any) => {
     if (error) {
       console.error('Delete service failed:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
-    
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Service not found' });
     }
-    
+
     return res.json({ message: 'Service deleted successfully' });
   });
 });
@@ -613,11 +614,11 @@ server.post('/upload/services', uploadService.array('images', 10), (req: Request
 // Get all bookings for a seller's shop
 server.get('/seller/bookings/:shopId', (req: Request, res: Response) => {
   const { shopId } = req.params;
-  
+
   if (!shopId) {
     return res.status(400).json({ error: 'Shop ID required' });
   }
-  
+
   db.query(
     `SELECT 
       sb.id,
@@ -650,24 +651,24 @@ server.get('/seller/bookings/:shopId', (req: Request, res: Response) => {
 
 // Create a new booking (for customers)
 server.post('/bookings', (req: Request, res: Response) => {
-  const { 
-    service_id, 
-    shop_id, 
-    customer_id, 
-    booking_date, 
-    start_time, 
+  const {
+    service_id,
+    shop_id,
+    customer_id,
+    booking_date,
+    start_time,
     end_time,
     customer_name,
     customer_email,
-    notes 
+    notes
   } = req.body;
-  
+
   if (!service_id || !shop_id || !customer_id || !booking_date || !start_time) {
-    return res.status(400).json({ 
-      error: 'service_id, shop_id, customer_id, booking_date, and start_time are required' 
+    return res.status(400).json({
+      error: 'service_id, shop_id, customer_id, booking_date, and start_time are required'
     });
   }
-  
+
   db.query(
     `INSERT INTO service_bookings 
     (service_id, shop_id, customer_id, booking_date, start_time, end_time, customer_name, customer_email, notes) 
@@ -678,9 +679,9 @@ server.post('/bookings', (req: Request, res: Response) => {
         console.error('Create booking failed:', error);
         return res.status(500).json({ error: 'Internal server error' });
       }
-      return res.status(201).json({ 
-        id: result.insertId, 
-        message: 'Booking created successfully' 
+      return res.status(201).json({
+        id: result.insertId,
+        message: 'Booking created successfully'
       });
     }
   );
@@ -690,16 +691,16 @@ server.post('/bookings', (req: Request, res: Response) => {
 server.put('/bookings/:id/status', (req: Request, res: Response) => {
   const { id } = req.params;
   const { status } = req.body;
-  
+
   if (!id || !status) {
     return res.status(400).json({ error: 'Booking ID and status are required' });
   }
-  
+
   const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ error: 'Invalid status value' });
   }
-  
+
   db.query(
     'UPDATE service_bookings SET status = ? WHERE id = ?',
     [status, id],
@@ -708,11 +709,11 @@ server.put('/bookings/:id/status', (req: Request, res: Response) => {
         console.error('Update booking status failed:', error);
         return res.status(500).json({ error: 'Internal server error' });
       }
-      
+
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Booking not found' });
       }
-      
+
       return res.json({ message: 'Booking status updated successfully' });
     }
   );
@@ -722,14 +723,14 @@ server.put('/bookings/:id/status', (req: Request, res: Response) => {
 server.put('/bookings/:id', (req: Request, res: Response) => {
   const { id } = req.params;
   const { booking_date, start_time, end_time, customer_name, customer_email, notes, status } = req.body;
-  
+
   if (!id) {
     return res.status(400).json({ error: 'Booking ID required' });
   }
 
   const updates: string[] = [];
   const values: any[] = [];
-  
+
   if (booking_date !== undefined) {
     updates.push('booking_date = ?');
     values.push(booking_date);
@@ -762,13 +763,13 @@ server.put('/bookings/:id', (req: Request, res: Response) => {
     updates.push('status = ?');
     values.push(status);
   }
-  
+
   if (updates.length === 0) {
     return res.status(400).json({ error: 'No fields to update' });
   }
-  
+
   values.push(id);
-  
+
   db.query(
     `UPDATE service_bookings SET ${updates.join(', ')} WHERE id = ?`,
     values,
@@ -777,11 +778,11 @@ server.put('/bookings/:id', (req: Request, res: Response) => {
         console.error('Update booking failed:', error);
         return res.status(500).json({ error: 'Internal server error' });
       }
-      
+
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Booking not found' });
       }
-      
+
       return res.json({ message: 'Booking updated successfully' });
     }
   );
@@ -790,11 +791,11 @@ server.put('/bookings/:id', (req: Request, res: Response) => {
 // Delete a booking
 server.delete('/bookings/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   if (!id) {
     return res.status(400).json({ error: 'Booking ID required' });
   }
-  
+
   db.query(
     'DELETE FROM service_bookings WHERE id = ?',
     [id],
@@ -803,12 +804,50 @@ server.delete('/bookings/:id', (req: Request, res: Response) => {
         console.error('Delete booking failed:', error);
         return res.status(500).json({ error: 'Internal server error' });
       }
-      
+
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Booking not found' });
       }
-      
+
       return res.json({ message: 'Booking deleted successfully' });
     }
   );
+});
+
+const secretKey = process.env['SECRETKEY'];
+if (!secretKey) {
+  throw new Error('Missing required environment variable: SECRET_KEY');
+}
+const stripe = new Stripe(secretKey, {
+  apiVersion: '2026-05-27.dahlia',
+});
+
+// ADD THIS ROUTE to your server
+server.post('/create-checkout-session', async (req: Request, res: Response) => {
+  try {
+    const { items } = req.body;
+
+    // Create a Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: items.map((item: any) => ({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: item.name,
+          },
+          unit_amount: Math.round(item.price * 100), // Stripe expects cents
+        },
+        quantity: item.quantity,
+      })),
+      mode: 'payment',
+      success_url: 'http://localhost:4200/success',
+      cancel_url: 'http://localhost:4200/basket',
+    });
+
+    res.json({ id: session.id });
+  } catch (error: any) {
+    console.error('Stripe Session Error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
