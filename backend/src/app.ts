@@ -822,7 +822,6 @@ const stripe = new Stripe(secretKey, {
   apiVersion: '2026-05-27.dahlia',
 });
 
-// ADD THIS ROUTE to your server
 server.post('/create-checkout-session', async (req: Request, res: Response) => {
   try {
     const { items } = req.body;
@@ -836,7 +835,7 @@ server.post('/create-checkout-session', async (req: Request, res: Response) => {
           product_data: {
             name: item.name,
           },
-          unit_amount: Math.round(item.price * 100), // Stripe expects cents
+          unit_amount: Math.round(item.price * 100),
         },
         quantity: item.quantity,
       })),

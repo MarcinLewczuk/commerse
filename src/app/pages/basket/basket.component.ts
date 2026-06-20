@@ -56,10 +56,10 @@ export class BasketComponent implements AfterViewInit {
 
   async ngAfterViewInit() {
     this.stripe = await loadStripe('pk_test_CgEHo7hDTah00i9jEVOQ40Dw00tLwMxOrL');
-    
+
     if (this.stripe) {
       const elements = this.stripe.elements();
-      
+
       this.cardElement = elements.create('card', {
         style: {
           base: {
@@ -81,7 +81,6 @@ export class BasketComponent implements AfterViewInit {
     }
   }
 
-  // --- RESTORED HELPER METHODS ---
 
   displayPrice(price: number): string {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
@@ -144,22 +143,18 @@ export class BasketComponent implements AfterViewInit {
   onBuyNow() {
     if (this.items().length === 0) return;
 
-    // 1. Validate the Angular Form (Email & Name)
     if (this.checkoutForm.invalid) {
-      this.checkoutForm.markAllAsTouched(); // Triggers the red error messages in HTML
+      this.checkoutForm.markAllAsTouched();
       return;
     }
 
-    // 2. Validate the Stripe Element (Card Data)
     if (!this.isCardComplete) {
       this.cardError = 'Please enter valid credit card details to proceed.';
       return;
     }
 
-    // If both the user info and the secure card are valid, proceed!
     this.cardError = '';
-    
-    // Choose simulation for dissertation purposes
-    this.stripeService.simulateCheckout(); 
+
+    this.stripeService.simulateCheckout();
   }
 }

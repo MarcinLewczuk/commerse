@@ -1,14 +1,14 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Service, generateServiceCode } from '../../../models/service';
 import { ServicesService } from '../../../services/services.service';
 
 @Component({
   selector: 'app-create-service',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './create-service.component.html',
   styleUrl: './create-service.component.css'
 })
