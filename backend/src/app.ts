@@ -1,6 +1,7 @@
 import path from 'path';
 import dotenv from 'dotenv';
 import Stripe from 'stripe';
+import twilio from 'twilio';
 dotenv.config({ path: path.resolve(__dirname, '../private/.env') });
 
 import express, { Request, Response } from 'express';
@@ -154,7 +155,6 @@ server.get('/products', (req: Request, res: Response) => {
         const result = {
           ...p,
           image_urls: p.image_urls
-          image_urls: p.image_urls
             ? p.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
             : []
         };
@@ -265,6 +265,57 @@ server.get('/shops/:shopId/products', (req: Request, res: Response) => {
 
 // Upsert user by Auth0 ID (auto-insert on login)
 server.post('/users/upsert', upsertUserByAuth0Id());
+
+// Twilio Verification
+const twilioClient = twilio(process.env['TWILIO_ACCOUNT_SID'], process.env['TWILIO_AUTH_TOKEN']);
+
+server.post('/users/verify-phone/send', async (req: Request, res: Response) => {
+  const { phone_number } = req.body;
+  if (!phone_number) return res.status(400).json({ error: 'phone_number required' });
+
+  try {
+    const serviceSid = process.env['TWILIO_VERIFY_SERVICE_SID']!;
+    const verification = await twilioClient.verify.v2.services(serviceSid)
+      .verifications.create({ to: phone_number, channel: 'sms' });
+    res.json({ success: true, status: verification.status });
+  } catch (error: any) {
+    console.error('Twilio Send Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to send verification code' });
+  }
+});
+
+server.post('/users/verify-phone/confirm', async (req: Request, res: Response) => {
+  const { auth0_id, phone_number, code } = req.body;
+  if (!auth0_id || !phone_number || !code) {
+    return res.status(400).json({ error: 'auth0_id, phone_number, and code required' });
+  }
+
+  try {
+    const serviceSid = process.env['TWILIO_VERIFY_SERVICE_SID']!;
+    const verificationCheck = await twilioClient.verify.v2.services(serviceSid)
+      .verificationChecks.create({ to: phone_number, code });
+
+    if (verificationCheck.status === 'approved') {
+      // Update DB
+      db.query(
+        'UPDATE users SET phone_number = ?, is_phone_verified = true WHERE auth0_id = ?',
+        [phone_number, auth0_id],
+        (error) => {
+          if (error) {
+            console.error('Update phone status failed:', error);
+            return res.status(500).json({ error: 'Database update failed' });
+          }
+          res.json({ success: true, message: 'Phone verified successfully' });
+        }
+      );
+    } else {
+      res.status(400).json({ error: 'Invalid verification code' });
+    }
+  } catch (error: any) {
+    console.error('Twilio Confirm Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to verify code' });
+  }
+});
 
 // Create a new shop
 server.post('/shops', createShop());

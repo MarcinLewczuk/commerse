@@ -56,90 +56,149 @@ import { UserService } from '../services/user.service';
           <div style="margin-top: 1.5rem; width: 100%; max-width: 400px;">
             @if (userInfo$ | async; as userInfo) {
               @if (userInfo && !userInfo.shop_id) {
-                <div style="padding: 1.5rem; background-color: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 0.5rem;">
-                  <h3 style="font-size: 1.1rem; font-weight: 600; color: #1e40af; margin-bottom: 0.5rem;">
-                    Become a Seller
-                  </h3>
-                  <p style="font-size: 0.95rem; color: #1e3a8a; margin-bottom: 1rem;">
-                    Create a shop to start selling products.
-                  </p>
-                  @if (showShopForm()) {
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                      <input
-                        type="text"
-                        placeholder="Enter shop name"
-                        [(ngModel)]="shopName"
-                        style="
-                          padding: 0.5rem;
-                          border: 1px solid #93c5fd;
-                          border-radius: 0.375rem;
-                          font-size: 1rem;
-                        "
-                      />
-                      <div style="display: flex; gap: 0.5rem;">
+                @if (!userInfo.is_phone_verified) {
+                  <div style="padding: 1.5rem; background-color: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 0.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; color: #1e40af; margin-bottom: 0.5rem;">
+                      Verify Phone Number
+                    </h3>
+                    <p style="font-size: 0.95rem; color: #1e3a8a; margin-bottom: 1rem;">
+                      You must verify your phone number to become a seller.
+                    </p>
+                    @if (!isCodeSent()) {
+                      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div style="display: flex; gap: 0.5rem;">
+                          <select
+                            [(ngModel)]="selectedCountryCode"
+                            style="padding: 0.5rem; border: 1px solid #93c5fd; border-radius: 0.375rem; font-size: 1rem; width: 110px; background-color: white;"
+                          >
+                            @for (country of countryCodes; track country.code) {
+                              <option [value]="country.code">{{ country.label }}</option>
+                            }
+                          </select>
+                          <input
+                            type="tel"
+                            placeholder="1234567890"
+                            [(ngModel)]="phoneNumber"
+                            style="padding: 0.5rem; border: 1px solid #93c5fd; border-radius: 0.375rem; font-size: 1rem; flex: 1;"
+                          />
+                        </div>
                         <button
-                          (click)="createShop()"
-                          [disabled]="isCreatingShop() || !shopName.trim()"
-                          style="
-                            flex: 1;
-                            padding: 0.5rem;
-                            background-color: #3b82f6;
-                            color: white;
-                            border: none;
-                            border-radius: 0.375rem;
-                            font-weight: 600;
-                            cursor: pointer;
-                            opacity: !isCreatingShop() && shopName.trim() ? 1 : 0.5;
-                          "
+                          (click)="sendVerificationCode()"
+                          [disabled]="isSendingCode() || !phoneNumber.trim()"
+                          style="padding: 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; opacity: !isSendingCode() && phoneNumber.trim() ? 1 : 0.5;"
                         >
-                          {{ isCreatingShop() ? 'Creating...' : 'Create Shop' }}
-                        </button>
-                        <button
-                          (click)="cancelCreateShop()"
-                          [disabled]="isCreatingShop()"
-                          style="
-                            padding: 0.5rem 1rem;
-                            background-color: #e5e7eb;
-                            border: none;
-                            border-radius: 0.375rem;
-                            font-weight: 600;
-                            cursor: pointer;
-                          "
-                        >
-                          Cancel
+                          {{ isSendingCode() ? 'Sending...' : 'Send Verification Code' }}
                         </button>
                       </div>
-                      @if (shopError()) {
-                        <div style="
-                          padding: 0.75rem;
-                          background-color: #fee2e2;
-                          border: 1px solid #fecaca;
-                          border-radius: 0.375rem;
-                          color: #991b1b;
-                          font-size: 0.875rem;
-                        ">
-                          {{ shopError() }}
+                    } @else {
+                      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <input
+                          type="text"
+                          placeholder="6-digit code"
+                          [(ngModel)]="verificationCode"
+                          style="padding: 0.5rem; border: 1px solid #93c5fd; border-radius: 0.375rem; font-size: 1rem;"
+                        />
+                        <button
+                          (click)="verifyCode()"
+                          [disabled]="isVerifyingCode() || !verificationCode.trim()"
+                          style="padding: 0.75rem; background-color: #10b981; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; opacity: !isVerifyingCode() && verificationCode.trim() ? 1 : 0.5;"
+                        >
+                          {{ isVerifyingCode() ? 'Verifying...' : 'Verify Code' }}
+                        </button>
+                      </div>
+                    }
+                    @if (phoneError()) {
+                      <div style="margin-top: 0.75rem; padding: 0.75rem; background-color: #fee2e2; border: 1px solid #fecaca; border-radius: 0.375rem; color: #991b1b; font-size: 0.875rem;">
+                        {{ phoneError() }}
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div style="padding: 1.5rem; background-color: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 0.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; color: #1e40af; margin-bottom: 0.5rem;">
+                      Become a Seller
+                    </h3>
+                    <p style="font-size: 0.95rem; color: #1e3a8a; margin-bottom: 1rem;">
+                      Create a shop to start selling products.
+                    </p>
+                    @if (showShopForm()) {
+                      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <input
+                          type="text"
+                          placeholder="Enter shop name"
+                          [(ngModel)]="shopName"
+                          style="
+                            padding: 0.5rem;
+                            border: 1px solid #93c5fd;
+                            border-radius: 0.375rem;
+                            font-size: 1rem;
+                          "
+                        />
+                        <div style="display: flex; gap: 0.5rem;">
+                          <button
+                            (click)="createShop()"
+                            [disabled]="isCreatingShop() || !shopName.trim()"
+                            style="
+                              flex: 1;
+                              padding: 0.5rem;
+                              background-color: #3b82f6;
+                              color: white;
+                              border: none;
+                              border-radius: 0.375rem;
+                              font-weight: 600;
+                              cursor: pointer;
+                              opacity: !isCreatingShop() && shopName.trim() ? 1 : 0.5;
+                            "
+                          >
+                            {{ isCreatingShop() ? 'Creating...' : 'Create Shop' }}
+                          </button>
+                          <button
+                            (click)="cancelCreateShop()"
+                            [disabled]="isCreatingShop()"
+                            style="
+                              padding: 0.5rem 1rem;
+                              background-color: #e5e7eb;
+                              border: none;
+                              border-radius: 0.375rem;
+                              font-weight: 600;
+                              cursor: pointer;
+                            "
+                          >
+                            Cancel
+                          </button>
                         </div>
-                      }
-                    </div>
-                  } @else {
-                    <button
-                      (click)="toggleShopForm()"
-                      style="
-                        width: 100%;
-                        padding: 0.75rem;
-                        background-color: #3b82f6;
-                        color: white;
-                        border: none;
-                        border-radius: 0.375rem;
-                        font-weight: 600;
-                        cursor: pointer;
-                      "
-                    >
-                      Create a Shop
-                    </button>
-                  }
-                </div>
+                        @if (shopError()) {
+                          <div style="
+                            padding: 0.75rem;
+                            background-color: #fee2e2;
+                            border: 1px solid #fecaca;
+                            border-radius: 0.375rem;
+                            color: #991b1b;
+                            font-size: 0.875rem;
+                          ">
+                            {{ shopError() }}
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <button
+                        (click)="toggleShopForm()"
+                        style="
+                          width: 100%;
+                          padding: 0.75rem;
+                          background-color: #3b82f6;
+                          color: white;
+                          border: none;
+                          border-radius: 0.375rem;
+                          font-weight: 600;
+                          cursor: pointer;
+                        "
+                      >
+                        Create a Shop
+                      </button>
+                    }
+                  </div>
+                }
               } @else if (userInfo && userInfo.shop_id) {
                 <div style="padding: 1.5rem; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 0.5rem;">
                   <p style="font-size: 0.95rem; color: #166534; font-weight: 600;">
@@ -166,6 +225,67 @@ export class ProfileComponent {
   isCreatingShop = signal(false);
   shopError = signal<string | null>(null);
   shopName = '';
+
+  isCodeSent = signal(false);
+  isSendingCode = signal(false);
+  isVerifyingCode = signal(false);
+  phoneError = signal<string | null>(null);
+  selectedCountryCode = '+1';
+  countryCodes = [
+    { code: '+1', label: 'US/CA (+1)' },
+    { code: '+44', label: 'UK (+44)' },
+    { code: '+91', label: 'IN (+91)' },
+    { code: '+61', label: 'AU (+61)' },
+    { code: '+81', label: 'JP (+81)' },
+    { code: '+49', label: 'DE (+49)' },
+    { code: '+33', label: 'FR (+33)' },
+    { code: '+39', label: 'IT (+39)' },
+    { code: '+34', label: 'ES (+34)' },
+    { code: '+55', label: 'BR (+55)' },
+    { code: '+52', label: 'MX (+52)' }
+  ];
+  phoneNumber = '';
+  verificationCode = '';
+
+  sendVerificationCode() {
+    if (!this.phoneNumber.trim()) {
+      this.phoneError.set('Phone number is required');
+      return;
+    }
+    this.isSendingCode.set(true);
+    this.phoneError.set(null);
+    const fullPhoneNumber = this.selectedCountryCode + this.phoneNumber.trim();
+    this.userService.sendVerificationCode(fullPhoneNumber).subscribe({
+      next: () => {
+        this.isSendingCode.set(false);
+        this.isCodeSent.set(true);
+      },
+      error: (err) => {
+        this.isSendingCode.set(false);
+        this.phoneError.set(err?.error?.error || 'Failed to send code');
+      }
+    });
+  }
+
+  verifyCode() {
+    if (!this.verificationCode.trim()) {
+      this.phoneError.set('Verification code is required');
+      return;
+    }
+    this.isVerifyingCode.set(true);
+    this.phoneError.set(null);
+    const fullPhoneNumber = this.selectedCountryCode + this.phoneNumber.trim();
+    this.userService.confirmVerificationCode(fullPhoneNumber, this.verificationCode).subscribe({
+      next: () => {
+        this.isVerifyingCode.set(false);
+        this.shopService.refreshUserInfo();
+      },
+      error: (err) => {
+        this.isVerifyingCode.set(false);
+        this.phoneError.set(err?.error?.error || 'Failed to verify code');
+      }
+    });
+  }
 
   toggleShopForm() {
     this.showShopForm.update(v => !v);

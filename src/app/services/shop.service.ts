@@ -9,6 +9,8 @@ export interface UserInfo {
   auth0_id: string;
   role: 'customer' | 'seller' | 'customer_seller';
   shop_id: number | null;
+  phone_number?: string | null;
+  is_phone_verified?: boolean;
 }
 
 export interface ShopInfo {
