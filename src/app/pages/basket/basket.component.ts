@@ -1,23 +1,86 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { loadStripe } from '@stripe/stripe-js';
+import { AuthService } from '@auth0/auth0-angular';
 import { BasketService } from '../../services/basket.service';
+import { StripeService } from '../../services/stripe.service';
+import { CheckoutValidators } from '../../validators/checkout.validator';
 import { slugify as productSlugify } from '../../models/product';
 import { slugify as serviceSlugify } from '../../models/service';
 
 @Component({
   selector: 'app-basket',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule],
   templateUrl: './basket.component.html',
   styleUrl: './basket.component.css'
 })
-export class BasketComponent {
+export class BasketComponent implements AfterViewInit {
   basketService = inject(BasketService);
+  stripeService = inject(StripeService);
+  private fb = inject(FormBuilder);
+  private auth = inject(AuthService);
 
   items = this.basketService.items;
   itemCount = this.basketService.itemCount;
   totalPrice = this.basketService.totalPrice;
+
+  // The Angular Form for User Details
+  checkoutForm: FormGroup;
+
+  // Stripe Element State for Card Details
+  stripe: any;
+  cardElement: any;
+  cardError: string = '';
+  isCardComplete: boolean = false;
+
+  constructor() {
+    // 1. Initialize the form with our custom validators
+    this.checkoutForm = this.fb.group({
+      email: ['', [Validators.required, CheckoutValidators.emailFormat]],
+      name: ['', [Validators.required, CheckoutValidators.fullName]]
+    });
+
+    // 2. Auto-fill the email if the user is currently logged in via Auth0
+    this.auth.user$.subscribe(user => {
+      if (user?.email) {
+        this.checkoutForm.patchValue({ email: user.email });
+      }
+      if (user?.name && user.name !== user.email) {
+        this.checkoutForm.patchValue({ name: user.name });
+      }
+    });
+  }
+
+  async ngAfterViewInit() {
+    this.stripe = await loadStripe('pk_test_CgEHo7hDTah00i9jEVOQ40Dw00tLwMxOrL');
+
+    if (this.stripe) {
+      const elements = this.stripe.elements();
+
+      this.cardElement = elements.create('card', {
+        style: {
+          base: {
+            fontSize: '14px',
+            color: '#111827',
+            '::placeholder': { color: '#9ca3af' },
+          },
+          invalid: { color: '#ef4444' },
+        },
+      });
+
+      this.cardElement.mount('#card-element');
+
+      // Stripe handles its own card validation in real-time right here
+      this.cardElement.on('change', (event: any) => {
+        this.isCardComplete = event.complete;
+        this.cardError = event.error ? event.error.message : '';
+      });
+    }
+  }
+
 
   displayPrice(price: number): string {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
@@ -75,8 +138,23 @@ export class BasketComponent {
     }
   }
 
+  // --- CHECKOUT LOGIC ---
+
   onBuyNow() {
-    // Placeholder for future implementation
-    alert('Checkout functionality coming soon!');
+    if (this.items().length === 0) return;
+
+    if (this.checkoutForm.invalid) {
+      this.checkoutForm.markAllAsTouched();
+      return;
+    }
+
+    if (!this.isCardComplete) {
+      this.cardError = 'Please enter valid credit card details to proceed.';
+      return;
+    }
+
+    this.cardError = '';
+
+    this.stripeService.simulateCheckout();
   }
 }

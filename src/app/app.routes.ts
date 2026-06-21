@@ -15,6 +15,7 @@ import { CreateProductComponent } from './pages/seller/create-product/create-pro
 import { CreateServiceComponent } from './pages/seller/create-service/create-service.component';
 import { EditServiceComponent } from './pages/seller/edit-service/edit-service.component';
 import { ServicesCalendarComponent } from './pages/seller/services-calendar/services-calendar.component';
+import { SuccessComponent } from './pages/success/success.component'
 
 export const routes: Routes = [
     {
@@ -96,6 +97,11 @@ export const routes: Routes = [
         path: 'seller/services/calendar',
         component: ServicesCalendarComponent,
         title: 'Services Calendar'
+    },
+    {
+        path: 'success',
+        component: SuccessComponent,
+        title: 'Order Successful'
     },
     {
         path: 'callback',

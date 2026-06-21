@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
 
-// Adjustable cost factor. Higher is slower but more secure. 12 is a reasonable baseline.
 const SALT_ROUNDS = Number(process.env['BCRYPT_ROUNDS'] || 12);
 
 /**
@@ -25,7 +24,7 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
 }
 
 /**
- * Convenience helper to strip sensitive fields before sending user object to client.
+ * Strip sensitive fields before sending user object to client.
  */
 export function sanitizeUser<T extends { password?: string }>(user: T): Omit<T, 'password'> {
     const { password, ...rest } = user;

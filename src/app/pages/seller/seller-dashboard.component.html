@@ -2,30 +2,24 @@
 	<div class="mb-8">
 		<div class="flex justify-between items-center mb-6">
 			<div>
-				<h1 class="text-3xl font-bold text-white mb-2">My Shop</h1>
+				<h1 class="text-3xl font-bold text-gray-200 mb-2">My Shop</h1>
 				@if (shop$ | async; as shop) {
-					<p class="text-gray-300">{{ shop.name }}</p>
+				<p class="text-gray-300">{{ shop.name }}</p>
 				}
 			</div>
 		</div>
 
 		<!-- Tabs Navigation -->
 		<div class="flex space-x-4 border-b border-gray-700">
-			<button 
-				(click)="setActiveTab('products')"
-				[class.border-b-2]="activeTab() === 'products'"
+			<button (click)="setActiveTab('products')" [class.border-b-2]="activeTab() === 'products'"
 				[class.border-purple-600]="activeTab() === 'products'"
-				[class.text-purple-600]="activeTab() === 'products'"
-				[class.text-gray-300]="activeTab() !== 'products'"
+				[class.text-purple-600]="activeTab() === 'products'" [class.text-gray-300]="activeTab() !== 'products'"
 				class="py-3 px-4 font-semibold transition-colors hover:text-purple-400 cursor-pointer">
 				Products
 			</button>
-			<button 
-				(click)="setActiveTab('services')"
-				[class.border-b-2]="activeTab() === 'services'"
+			<button (click)="setActiveTab('services')" [class.border-b-2]="activeTab() === 'services'"
 				[class.border-purple-600]="activeTab() === 'services'"
-				[class.text-purple-600]="activeTab() === 'services'"
-				[class.text-gray-300]="activeTab() !== 'services'"
+				[class.text-purple-600]="activeTab() === 'services'" [class.text-gray-300]="activeTab() !== 'services'"
 				class="py-3 px-4 font-semibold transition-colors hover:text-purple-400 cursor-pointer">
 				Services
 			</button>
@@ -34,152 +28,149 @@
 
 	<!-- Products Tab -->
 	@if (activeTab() === 'products') {
-		<div class="mb-6 flex justify-end">
-			<a 
-				routerLink="/seller/products/create"
-				class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition cursor-pointer inline-block">
-				+ Add a Product
-			</a>
-		</div>
+	<div class="mb-6 flex justify-end">
+		<a routerLink="/seller/products/create"
+			class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-gray-200 font-semibold rounded-lg transition cursor-pointer inline-block">
+			+ Add a Product
+		</a>
+	</div>
 
-		@if (products$ | async; as products) {
-			@if (products.length === 0) {
-				<div class="p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">
-					<p class="text-gray-300">No products yet. Start adding products to your shop!</p>
-				</div>
+	@if (products$ | async; as products) {
+	@if (products.length === 0) {
+	<div class="p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">
+		<p class="text-gray-200">No products yet. Start adding products to your shop!</p>
+	</div>
+	} @else {
+	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+		@for (product of products; track product.id) {
+		<div
+			class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+			@if (getFirstImage(product)) {
+			<img [src]="getFirstImage(product)" [alt]="product.name" class="w-full h-48 object-cover" />
 			} @else {
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					@for (product of products; track product.id) {
-						<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-							@if (getFirstImage(product)) {
-								<img 
-									[src]="getFirstImage(product)" 
-									[alt]="product.name"
-									class="w-full h-48 object-cover"
-								/>
-							} @else {
-								<div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-									<span class="text-gray-800">No image</span>
-								</div>
-							}
-							
-							<div class="p-4">
-								<h3 class="text-lg font-semibold text-white mb-2">{{ product.name }}</h3>
-								
-								@if (product.description) {
-									<p class="text-sm text-gray-300 mb-3 line-clamp-2 overflow-hidden break-words">{{ product.description }}</p>
-								}
-								
-								<div class="flex items-center justify-between mb-3">
-									<span class="text-2xl font-bold text-white">${{ product.price }}</span>
-									<span class="text-sm px-2 py-1 bg-blue-100 text-blue-800 rounded">
-										Stock: {{ product.stock_quantity }}
-									</span>
-								</div>
-
-								@if (product.sku) {
-									<p class="text-xs text-gray-400 mb-3">SKU: {{ product.sku }}</p>
-								}
-
-								<div class="flex gap-2">
-									<a [routerLink]="['/seller/products', product.id, 'edit']" class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md text-center">
-										Edit
-									</a>
-									<button 
-										(click)="openDeleteConfirmation(product)"
-										[disabled]="deleting() === product.id"
-										class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-300 text-red-800 disabled:text-gray-800 text-sm font-medium rounded-md cursor-pointer">
-										{{ deleting() === product.id ? 'Deleting...' : 'Delete' }}
-									</button>
-								</div>
-							</div>
-						</div>
-					}
-				</div>
-			}
-		} @else {
-			<div class="text-center py-12">
-				<p class="text-gray-300">Loading products...</p>
+			<div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+				<span class="text-gray-200">No image</span>
 			</div>
+			}
+
+			<div class="p-4">
+				<h3 class="text-lg font-semibold text-gray-700 mb-2">{{ product.name }}</h3>
+
+				@if (product.description) {
+				<p class="text-sm text-gray-700 mb-3 line-clamp-2 overflow-hidden break-words">{{ product.description }}
+				</p>
+				}
+
+				<div class="flex items-center justify-between mb-3">
+					<span class="text-2xl font-bold text-gray-700">${{ product.price }}</span>
+					<span class="text-sm px-2 py-1 bg-blue-100 text-blue-800 rounded">
+						Stock: {{ product.stock_quantity }}
+					</span>
+				</div>
+
+				@if (product.sku) {
+				<p class="text-xs text-gray-600 mb-3">SKU: {{ product.sku }}</p>
+				}
+
+				<div class="flex gap-2">
+					<a [routerLink]="['/seller/products', product.id, 'edit']"
+						class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md text-center">
+						Edit
+					</a>
+					<button (click)="openDeleteConfirmation(product)" [disabled]="deleting() === product.id"
+						class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-300 text-red-800 disabled:text-gray-200 text-sm font-medium rounded-md cursor-pointer">
+						{{ deleting() === product.id ? 'Deleting...' : 'Delete' }}
+					</button>
+				</div>
+			</div>
+		</div>
 		}
+	</div>
+	}
+	} @else {
+	<div class="text-center py-12">
+		<p class="text-gray-300">Loading products...</p>
+	</div>
+	}
 	}
 
 	<!-- Services Tab -->
 	@if (activeTab() === 'services') {
-		<div class="mb-6 flex justify-between items-center">
-			<a 
-				routerLink="/seller/services/calendar"
-				class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition cursor-pointer inline-block">
-				📅 View Calendar
-			</a>
-			<a 
-				routerLink="/seller/services/create"
-				class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition cursor-pointer inline-block">
-				+ Add a Service
-			</a>
-		</div>
+	<div class="mb-6 flex justify-between items-center">
+		<a routerLink="/seller/services/calendar"
+			class="px-6 py-3 bg-green-600 hover:bg-green-700 text-gray-200 font-semibold rounded-lg transition cursor-pointer flex items-center gap-4">
+			<!-- Calendar SVG - Should probably change in the future -->
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar3"
+				viewBox="0 0 16 16">
+				<path
+					d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2M1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857z" />
+				<path
+					d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
+			</svg>
+			<p>View Calendar</p>
+		</a>
+		<a routerLink="/seller/services/create"
+			class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-gray-200 font-semibold rounded-lg transition cursor-pointer inline-block">
+			+ Add a Service
+		</a>
+	</div>
 
-		@if (services$ | async; as services) {
-			@if (services.length === 0) {
-				<div class="p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">
-					<p class="text-gray-300">No services yet. Start adding services to your shop!</p>
-				</div>
+	@if (services$ | async; as services) {
+	@if (services.length === 0) {
+	<div class="p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">
+		<p class="text-gray-300">No services yet. Start adding services to your shop!</p>
+	</div>
+	} @else {
+	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+		@for (service of services; track service.id) {
+		<div
+			class="bg-white border border-gray-700 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+			@if (getFirstServiceImage(service)) {
+			<img [src]="getFirstServiceImage(service)" [alt]="service.name" class="w-full h-48 object-cover" />
 			} @else {
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					@for (service of services; track service.id) {
-						<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-							@if (getFirstServiceImage(service)) {
-								<img 
-									[src]="getFirstServiceImage(service)" 
-									[alt]="service.name"
-									class="w-full h-48 object-cover"
-								/>
-							} @else {
-								<div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-									<svg class="w-16 h-16 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
-										<path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/>
-									</svg>
-								</div>
-							}
-							
-							<div class="p-4">
-								<h3 class="text-lg font-semibold text-white mb-2">{{ service.name }}</h3>
-								
-								@if (service.description) {
-									<p class="text-sm text-gray-300 mb-3 line-clamp-2 overflow-hidden break-words">{{ service.description }}</p>
-								}
-								
-								<div class="flex items-center justify-between mb-3">
-									<span class="text-2xl font-bold text-blue-600">${{ service.price }}</span>
-									@if (service.duration_minutes) {
-										<span class="text-sm px-2 py-1 bg-green-100 text-green-800 rounded">
-											{{ service.duration_minutes }} min
-										</span>
-									}
-								</div>
+			<div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+				<svg class="w-16 h-16 text-gray-200" fill="currentColor" viewBox="0 0 20 20">
+					<path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z" />
+				</svg>
+			</div>
+			}
 
-								<div class="flex gap-2">
-									<a 
-										[routerLink]="['/seller/services', service.id, 'edit']"
-										class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md text-center cursor-pointer">
-										Edit
-									</a>
-									<button 
-										(click)="deleteService(service)"
-										[disabled]="deleting() === service.id"
-									class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-300 text-red-800 disabled:text-gray-800 text-sm font-medium rounded-md cursor-pointer">
-										{{ deleting() === service.id ? 'Deleting...' : 'Delete' }}
-									</button>
-								</div>
-							</div>
-						</div>
+			<div class="p-4">
+				<h3 class="text-lg font-semibold text-gray-7 mb-2">{{ service.name }}</h3>
+
+				@if (service.description) {
+				<p class="text-sm text-gray-700 mb-3 line-clamp-2 overflow-hidden break-words">{{ service.description }}
+				</p>
+				}
+
+				<div class="flex items-center justify-between mb-3">
+					<span class="text-2xl font-bold text-gray-700">${{ service.price }}</span>
+					@if (service.duration_minutes) {
+					<span class="text-sm px-2 py-1 bg-green-100 text-green-800 rounded">
+						{{ service.duration_minutes }} min
+					</span>
 					}
 				</div>
-			}
-		} @else {
-			<div class="text-center py-12">
-				<p class="text-gray-300">Loading services...</p>
+
+				<div class="flex gap-2">
+					<a [routerLink]="['/seller/services', service.id, 'edit']"
+						class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md text-center cursor-pointer">
+						Edit
+					</a>
+					<button (click)="deleteService(service)" [disabled]="deleting() === service.id"
+						class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-300 text-red-800 disabled:text-gray-200 text-sm font-medium rounded-md cursor-pointer">
+						{{ deleting() === service.id ? 'Deleting...' : 'Delete' }}
+					</button>
+				</div>
 			</div>
+		</div>
 		}
+	</div>
+	}
+	} @else {
+	<div class="text-center py-12">
+		<p class="text-gray-300">Loading services...</p>
+	</div>
+	}
 	}
 </section>
