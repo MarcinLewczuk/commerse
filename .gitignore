@@ -11,6 +11,9 @@ public/images/services/
 # Auth0 env 
 src/environments/environment.ts
 
+# Stripe env
+appsettings.json
+
 # Compiled output
 /dist
 /tmp
