@@ -48,7 +48,7 @@
 	} @else {
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 			@for (shop of shops(); track shop.id) {
-			<a [routerLink]="['/shops', shop.id]" class="group bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden hover:shadow-xl hover:border-indigo-500 transition-all cursor-pointer">
+			<a [routerLink]="['/shop', shop.id]" class="group bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden hover:shadow-xl hover:border-indigo-500 transition-all cursor-pointer">
 				<!-- Shop Header -->
 			<div class="bg-gradient-to-br from-gray-700 to-gray-600 p-6 border-b border-gray-600">
 						<div class="flex items-center gap-4">

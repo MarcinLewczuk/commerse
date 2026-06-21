@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Service, slugify as slugifyService } from '../../models/service';
 import { slugify as productSlugify } from '../../models/product';
 import { BasketService } from '../../services/basket.service';
+import { ShopService, UserInfo } from '../../services/shop.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface Product {
@@ -36,8 +37,11 @@ export class ShopDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private basketService = inject(BasketService);
+  private shopService = inject(ShopService);
   private snackBar = inject(MatSnackBar);
   private readonly apiUrl = 'http://localhost:3000';
+
+  userInfo = signal<UserInfo | null>(null);
 
   shop = signal<ShopDetail | null>(null);
   services = signal<Service[]>([]);
@@ -47,6 +51,7 @@ export class ShopDetailComponent implements OnInit {
   activeTab = signal<'products' | 'services'>('products');
 
   ngOnInit() {
+    this.shopService.getUserInfo().subscribe(info => this.userInfo.set(info));
     const shopId = this.route.snapshot.paramMap.get('id');
     if (!shopId) {
       this.error.set('Shop ID not found');
@@ -185,6 +190,21 @@ export class ShopDetailComponent implements OnInit {
   addServiceToBasket(event: Event, service: Service) {
     event.preventDefault();
     event.stopPropagation();
+
+    const user = this.userInfo();
+    if (!user) {
+      this.snackBar.open('You must be logged in to book a service.', 'Login', { duration: 5000 });
+      return;
+    }
+    
+    if (!user.is_phone_verified) {
+      this.snackBar.open('You must verify your phone number in your profile to book a service.', 'Go to Profile', {
+        duration: 5000,
+      }).onAction().subscribe(() => {
+        this.router.navigate(['/profile']);
+      });
+      return;
+    }
     
     this.basketService.addItem('service', service, 1);
     this.snackBar.open('✓ Service added to basket!', 'View Basket', {
