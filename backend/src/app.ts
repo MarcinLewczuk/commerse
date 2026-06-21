@@ -154,6 +154,7 @@ server.get('/products', (req: Request, res: Response) => {
         const result = {
           ...p,
           image_urls: p.image_urls
+          image_urls: p.image_urls
             ? p.image_urls.split(',').map((url: string) => `${apiUrl}${url}`)
             : []
         };
