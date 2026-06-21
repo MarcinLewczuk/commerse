@@ -167,7 +167,7 @@ export function getUserByAuth0Id(tableName: string) {
         }
 
         db.query(
-            `SELECT id, auth0_id, role, shop_id FROM ${tableName} WHERE auth0_id = ? LIMIT 1`,
+            `SELECT id, auth0_id, role, shop_id, phone_number, is_phone_verified FROM ${tableName} WHERE auth0_id = ? LIMIT 1`,
             [auth0Id],
             (error: QueryError | null, results: any[]) => {
                 if (error) {
@@ -194,7 +194,7 @@ export function upsertUserByAuth0Id() {
 
         // First check if user exists
         db.query(
-            'SELECT id, auth0_id, role, shop_id FROM users WHERE auth0_id = ? LIMIT 1',
+            'SELECT id, auth0_id, role, shop_id, phone_number, is_phone_verified FROM users WHERE auth0_id = ? LIMIT 1',
             [auth0_id],
             (error: QueryError | null, results: any[]) => {
                 if (error) {
@@ -220,7 +220,9 @@ export function upsertUserByAuth0Id() {
                             id: insertResults.insertId,
                             auth0_id,
                             role,
-                            shop_id: null
+                            shop_id: null,
+                            phone_number: null,
+                            is_phone_verified: false
                         });
                     }
                 );

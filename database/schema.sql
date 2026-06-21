@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS users (
   auth0_id VARCHAR(255) NOT NULL UNIQUE,  -- Auth0's user.sub identifier
   `role` ENUM('customer', 'seller', 'customer_seller') DEFAULT 'customer',
   shop_id INT UNIQUE,                      -- NULL for customers, populated for sellers
+  phone_number VARCHAR(20) DEFAULT NULL,
+  is_phone_verified BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_auth0_id (auth0_id),
   INDEX idx_role (`role`),
