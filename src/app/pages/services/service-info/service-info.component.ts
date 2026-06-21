@@ -1,9 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { Service } from '../../../models/service';
 import { ServicesService } from '../../../services/services.service';
 import { BasketService } from '../../../services/basket.service';
+import { ShopService, UserInfo } from '../../../services/shop.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
@@ -18,6 +19,10 @@ export class ServiceInfoComponent implements OnInit {
   private location = inject(Location);
   private basketService = inject(BasketService);
   private snackBar = inject(MatSnackBar);
+  private shopService = inject(ShopService);
+  private router = inject(Router);
+
+  userInfo = signal<UserInfo | null>(null);
 
   service = signal<Service | null>(null);
   loading = signal<boolean>(true);
@@ -37,6 +42,8 @@ export class ServiceInfoComponent implements OnInit {
       this.error.set('Service not found');
       this.loading.set(false);
     }
+    
+    this.shopService.getUserInfo().subscribe(info => this.userInfo.set(info));
   }
 
   fetchService(slug: string) {
@@ -102,6 +109,25 @@ export class ServiceInfoComponent implements OnInit {
   }
 
   addToBasket() {
+    const user = this.userInfo();
+    if (!user) {
+      this.snackBar.open('You must be logged in to book a service.', 'Login', {
+        duration: 5000,
+      }).onAction().subscribe(() => {
+        // Typically handled by Auth0 login method, but here we can just prompt
+      });
+      return;
+    }
+    
+    if (!user.is_phone_verified) {
+      this.snackBar.open('You must verify your phone number in your profile to book a service.', 'Go to Profile', {
+        duration: 5000,
+      }).onAction().subscribe(() => {
+        this.router.navigate(['/profile']);
+      });
+      return;
+    }
+
     const currentService = this.service();
     if (currentService) {
       this.basketService.addItem('service', currentService, 1);
@@ -110,7 +136,7 @@ export class ServiceInfoComponent implements OnInit {
         horizontalPosition: 'end',
         verticalPosition: 'bottom'
       }).onAction().subscribe(() => {
-        window.location.href = '/basket';
+        this.router.navigate(['/basket']);
       });
     }
   }
